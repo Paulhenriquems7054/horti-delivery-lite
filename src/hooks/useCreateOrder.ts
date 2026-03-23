@@ -13,6 +13,7 @@ interface CreateOrderInput {
 export function useCreateOrder() {
   return useMutation({
     mutationFn: async (input: CreateOrderInput) => {
+      // 1. Cria o pedido
       const { data: order, error: oErr } = await supabase
         .from("orders")
         .insert({
@@ -27,15 +28,14 @@ export function useCreateOrder() {
 
       if (oErr) throw oErr;
 
+      // 2. Cria os itens do pedido
       const orderItems = input.products.map((p) => ({
         order_id: order.id,
         product_id: p.id,
         quantity: p.quantity,
       }));
 
-      const { error: iErr } = await supabase
-        .from("order_items")
-        .insert(orderItems);
+      const { error: iErr } = await supabase.from("order_items").insert(orderItems);
 
       if (iErr) throw iErr;
 

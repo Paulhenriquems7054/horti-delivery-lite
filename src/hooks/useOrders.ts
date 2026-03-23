@@ -16,17 +16,22 @@ export function useRealtimeOrders() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Carga inicial
     const fetchOrders = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("orders")
         .select("*")
         .order("created_at", { ascending: false });
-      setOrders((data as Order[]) || []);
+
+      if (!error) {
+        setOrders((data as Order[]) ?? []);
+      }
       setLoading(false);
     };
 
     fetchOrders();
 
+    // Assinatura realtime
     const channel = supabase
       .channel("orders-realtime")
       .on(
@@ -37,7 +42,13 @@ export function useRealtimeOrders() {
             setOrders((prev) => [payload.new as Order, ...prev]);
           } else if (payload.eventType === "UPDATE") {
             setOrders((prev) =>
-              prev.map((o) => (o.id === (payload.new as Order).id ? (payload.new as Order) : o))
+              prev.map((o) =>
+                o.id === (payload.new as Order).id ? (payload.new as Order) : o
+              )
+            );
+          } else if (payload.eventType === "DELETE") {
+            setOrders((prev) =>
+              prev.filter((o) => o.id !== (payload.old as Order).id)
             );
           }
         }
@@ -57,5 +68,6 @@ export async function updateOrderStatus(orderId: string, status: string) {
     .from("orders")
     .update({ status })
     .eq("id", orderId);
+
   if (error) throw error;
 }

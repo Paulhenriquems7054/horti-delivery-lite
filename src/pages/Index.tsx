@@ -3,127 +3,211 @@ import { useActiveBasket } from "@/hooks/useActiveBasket";
 import { useCreateOrder } from "@/hooks/useCreateOrder";
 import { ProductCard } from "@/components/ProductCard";
 import { CheckoutForm } from "@/components/CheckoutForm";
-import { Button } from "@/components/ui/button";
-import { ShoppingCart, CheckCircle2, Leaf } from "lucide-react";
+import { ShoppingCart, CheckCircle2, Leaf, Package } from "lucide-react";
 import { toast } from "sonner";
 
 type Step = "basket" | "checkout" | "confirmation";
 
 export default function Index() {
-  const { data: basket, isLoading } = useActiveBasket();
+  const { data: basket, isLoading, isError } = useActiveBasket();
   const createOrder = useCreateOrder();
   const [step, setStep] = useState<Step>("basket");
 
+  /* ─── Loading ─── */
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground text-lg">Carregando...</div>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background gap-4">
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative h-16 w-16">
+            <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary animate-spin-slow" />
+          </div>
+          <p className="text-muted-foreground font-semibold animate-pulse">
+            Buscando cesta da semana...
+          </p>
+        </div>
       </div>
     );
   }
 
+  /* ─── Erro de rede ─── */
+  if (isError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="text-center max-w-xs">
+          <Package className="mx-auto h-14 w-14 text-muted-foreground/40 mb-4" />
+          <h1 className="text-xl font-extrabold text-foreground">Ocorreu um erro</h1>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Não conseguimos carregar as informações. Verifique sua conexão e tente novamente.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-5 h-11 px-6 rounded-xl gradient-hero text-white font-bold text-sm shadow-button"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ─── Sem cesta ativa ─── */
   if (!basket) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="text-center">
-          <Leaf className="mx-auto h-16 w-16 text-primary mb-4" />
-          <h1 className="text-2xl font-bold text-foreground">Nenhuma cesta disponível</h1>
-          <p className="text-muted-foreground mt-2">Volte em breve para conferir nossas novidades!</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6">
+        <div className="text-center max-w-xs">
+          <div className="mx-auto h-24 w-24 rounded-full gradient-card flex items-center justify-center mb-5">
+            <span className="text-5xl">🥬</span>
+          </div>
+          <h1 className="text-2xl font-extrabold text-foreground">Sem cesta disponível</h1>
+          <p className="text-muted-foreground mt-2 leading-relaxed">
+            Nossa cesta da semana ainda não foi preparada. Volte em breve! 🌱
+          </p>
         </div>
       </div>
     );
   }
 
+  /* ─── Confirmação ─── */
   if (step === "confirmation") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="text-center max-w-sm">
-          <CheckCircle2 className="mx-auto h-20 w-20 text-primary mb-4" />
-          <h1 className="text-2xl font-extrabold text-foreground">Pedido recebido!</h1>
-          <p className="text-muted-foreground mt-2 text-lg">Vamos preparar sua cesta com todo carinho 🥬</p>
-          <div className="mt-6 rounded-xl bg-accent p-4 text-left">
-            <p className="text-sm font-semibold text-accent-foreground">{basket.name}</p>
-            <p className="text-2xl font-extrabold text-primary mt-1">
-              R$ {basket.price.toFixed(2).replace(".", ",")}
+      <div className="flex min-h-screen flex-col bg-background">
+        <header className="gradient-hero px-4 py-5">
+          <div className="mx-auto max-w-lg flex items-center gap-2">
+            <Leaf className="h-7 w-7 text-white/90" />
+            <span className="text-base font-extrabold text-white">HortiDelivery Lite</span>
+          </div>
+        </header>
+
+        <main className="flex flex-1 items-center justify-center px-4 py-8">
+          <div className="text-center max-w-sm animate-pop-in">
+            <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100">
+              <CheckCircle2 className="h-14 w-14 text-emerald-500" />
+            </div>
+            <h1 className="text-3xl font-extrabold text-foreground">Pedido recebido!</h1>
+            <p className="text-muted-foreground mt-2 text-lg leading-relaxed">
+              Vamos preparar sua cesta com carinho 🥬✨
             </p>
-          </div>
-          <Button className="mt-6 w-full h-12" onClick={() => setStep("basket")}>
-            Voltar ao início
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-primary px-4 py-4 shadow-md">
-        <div className="mx-auto flex max-w-lg items-center gap-3">
-          <Leaf className="h-8 w-8 text-primary-foreground" />
-          <div>
-            <h1 className="text-lg font-extrabold text-primary-foreground leading-tight">
-              BeiraRio Delivery
-            </h1>
-            <p className="text-xs text-primary-foreground/80">Hortifruti fresquinho na sua porta</p>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-lg px-4 pb-8">
-        {step === "basket" && (
-          <>
-            {/* Basket Hero */}
-            <div className="mt-6 rounded-2xl bg-accent p-5">
-              <p className="text-sm font-semibold text-accent-foreground uppercase tracking-wide">
-                🥗 Cesta da semana
+            <div className="mt-6 rounded-2xl gradient-card border border-primary/20 p-5 text-left space-y-1">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                🛒 Seu pedido
               </p>
-              <h2 className="text-2xl font-extrabold text-foreground mt-1">{basket.name}</h2>
-              <p className="text-3xl font-extrabold text-primary mt-2">
+              <p className="text-lg font-extrabold text-foreground">{basket.name}</p>
+              <p className="text-3xl font-extrabold text-primary">
                 R$ {basket.price.toFixed(2).replace(".", ",")}
               </p>
             </div>
 
-            {/* Products */}
-            <div className="mt-4 space-y-2">
-              {basket.products.map((p) => (
-                <ProductCard key={p.id} product={p} />
+            <p className="text-sm text-muted-foreground mt-4">
+              Acompanhe o status com o atendente do mercado 📞
+            </p>
+
+            <button
+              onClick={() => setStep("basket")}
+              className="mt-6 w-full h-13 py-3.5 rounded-2xl border-2 border-primary text-primary font-extrabold text-base hover:bg-accent transition-colors"
+            >
+              ← Voltar ao início
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  /* ─── Cesta + Checkout ─── */
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <header className="gradient-hero px-4 py-5 shadow-md">
+        <div className="mx-auto max-w-lg flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
+            <Leaf className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-base font-extrabold text-white leading-tight">
+              HortiDelivery Lite
+            </h1>
+            <p className="text-xs text-white/75">Hortifruti fresquinho na sua porta 🌿</p>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-lg px-4 pb-10 flex-1">
+        {/* Etapa 1: Carrinho/Cesta */}
+        {step === "basket" && (
+          <div className="animate-slide-up">
+            {/* Hero da cesta */}
+            <div className="mt-5 rounded-3xl gradient-card border border-primary/20 p-5 shadow-card">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <p className="text-xs font-extrabold uppercase tracking-widest text-primary/70">
+                    🥗 Cesta da Semana
+                  </p>
+                  <h2 className="text-2xl font-extrabold text-foreground mt-1">{basket.name}</h2>
+                  <p className="text-4xl font-extrabold text-primary mt-2">
+                    R$ {basket.price.toFixed(2).replace(".", ",")}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {basket.products.length} produto{basket.products.length !== 1 ? "s" : ""} inclusos
+                  </p>
+                </div>
+                <div className="text-5xl mt-1">🧺</div>
+              </div>
+            </div>
+
+            {/* Lista de produtos */}
+            <div className="mt-5 space-y-2.5">
+              <h3 className="text-sm font-extrabold text-muted-foreground uppercase tracking-wider px-1">
+                O que vem na cesta
+              </h3>
+              {basket.products.map((p, i) => (
+                <div
+                  key={p.id}
+                  className="animate-slide-up"
+                  style={{ animationDelay: `${i * 60}ms`, opacity: 0 }}
+                >
+                  <ProductCard product={p} />
+                </div>
               ))}
             </div>
 
             {/* CTA */}
-            <div className="mt-6">
-              <Button
+            <div className="mt-7 space-y-3">
+              <button
+                id="btn-comprar-agora"
                 onClick={() => setStep("checkout")}
-                className="w-full h-14 text-lg font-bold shadow-lg"
-                size="lg"
+                className="w-full h-14 rounded-2xl gradient-hero text-white text-lg font-extrabold shadow-button flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
               >
-                <ShoppingCart className="mr-2 h-5 w-5" />
+                <ShoppingCart className="h-5 w-5" />
                 Comprar agora
-              </Button>
+              </button>
+              <p className="text-center text-xs text-muted-foreground">
+                🔒 Sem cartão • Pagamento na entrega
+              </p>
             </div>
-          </>
+          </div>
         )}
 
+        {/* Etapa 2: Checkout */}
         {step === "checkout" && (
           <div className="mt-6">
-            <h2 className="text-xl font-extrabold text-foreground mb-1">Finalizar pedido</h2>
-            <p className="text-muted-foreground mb-4">
-              {basket.name} — R$ {basket.price.toFixed(2).replace(".", ",")}
-            </p>
             <CheckoutForm
               loading={createOrder.isPending}
+              basketName={basket.name}
+              basketPrice={basket.price}
               onBack={() => setStep("basket")}
               onSubmit={(data) => {
                 createOrder.mutate(
                   { ...data, total: basket.price, products: basket.products },
                   {
                     onSuccess: () => {
-                      toast.success("Pedido enviado com sucesso!");
+                      toast.success("Pedido enviado com sucesso! 🎉");
                       setStep("confirmation");
                     },
-                    onError: () => {
-                      toast.error("Erro ao enviar pedido. Tente novamente.");
+                    onError: (err: any) => {
+                      console.error(err);
+                      toast.error("Erro ao enviar pedido. Verifique sua conexão.");
                     },
                   }
                 );

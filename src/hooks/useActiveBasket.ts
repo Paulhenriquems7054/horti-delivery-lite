@@ -17,9 +17,10 @@ export interface ActiveBasket {
 }
 
 export function useActiveBasket() {
-  return useQuery({
+  return useQuery<ActiveBasket | null>({
     queryKey: ["active-basket"],
-    queryFn: async (): Promise<ActiveBasket | null> => {
+    queryFn: async () => {
+      // 1. Busca a cesta ativa
       const { data: basket, error: bErr } = await supabase
         .from("baskets")
         .select("*")
@@ -30,6 +31,7 @@ export function useActiveBasket() {
       if (bErr) throw bErr;
       if (!basket) return null;
 
+      // 2. Busca os itens com dados dos produtos via join
       const { data: items, error: iErr } = await supabase
         .from("basket_items")
         .select("quantity, products(id, name, price, image_url)")
@@ -37,7 +39,7 @@ export function useActiveBasket() {
 
       if (iErr) throw iErr;
 
-      const products: BasketProduct[] = (items || []).map((item: any) => ({
+      const products: BasketProduct[] = (items ?? []).map((item: any) => ({
         id: item.products.id,
         name: item.products.name,
         price: item.products.price,
@@ -45,7 +47,13 @@ export function useActiveBasket() {
         quantity: item.quantity,
       }));
 
-      return { id: basket.id, name: basket.name, price: basket.price, products };
+      return {
+        id: basket.id,
+        name: basket.name,
+        price: basket.price,
+        products,
+      };
     },
+    staleTime: 60_000,
   });
 }
