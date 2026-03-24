@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Leaf, Plus, Trash2, ArrowLeft, Loader2, Save } from "lucide-react";
@@ -15,6 +15,7 @@ export default function AdminBasket() {
   const [newProductUnit, setNewProductUnit] = useState("un");
   const [basketName, setBasketName] = useState("");
   const [basketPrice, setBasketPrice] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [editingItem, setEditingItem] = useState<any>(null);
 
@@ -67,7 +68,7 @@ export default function AdminBasket() {
   });
 
   const addProductMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (file?: File) => {
       if (!basket) throw new Error("Cesta não encontrada");
       
       const priceVal = parseFloat(newProductPrice.replace(",", "."));
@@ -77,10 +78,33 @@ export default function AdminBasket() {
         throw new Error("Preencha todos os campos corretamente");
       }
 
+      let fileUrl = null;
+      if (file) {
+        try {
+          const fileExt = file.name.split('.').pop();
+          const filePath = `${Date.now()}.${fileExt}`;
+          const { data, error } = await supabase.storage.from('arquivos').upload(filePath, file);
+          if (data) {
+             const { data: publicUrlData } = supabase.storage.from('arquivos').getPublicUrl(filePath);
+             fileUrl = publicUrlData.publicUrl;
+          } else {
+             fileUrl = file.name; // Fallback caso bucket não exista
+          }
+        } catch {
+             fileUrl = file.name; // Fallback
+        }
+      }
+
       // 1. Criar o produto
       const { data: prodData, error: prodErr } = await supabase
         .from("products")
-        .insert([{ name: newProductName, price: priceVal, unit: newProductUnit, active: true }])
+        .insert([{ 
+           name: newProductName, 
+           price: priceVal, 
+           unit: newProductUnit, 
+           active: true,
+           image_url: fileUrl
+        }])
         .select()
         .single();
 
@@ -249,13 +273,34 @@ export default function AdminBasket() {
               />
             </div>
           </div>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+            onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                   addProductMutation.mutate(file);
+                }
+                e.target.value = ''; // Reset input
+            }}
+          />
           <button 
-            onClick={() => addProductMutation.mutate()}
+            onClick={() => {
+                const priceVal = parseFloat(newProductPrice.replace(",", "."));
+                const qtyVal = parseInt(newProductQuantity, 10);
+                if (!newProductName || isNaN(priceVal) || isNaN(qtyVal)) {
+                    toast.error("Preencha todos os campos corretamente");
+                    return;
+                }
+                fileInputRef.current?.click();
+            }}
             disabled={addProductMutation.isPending}
             className="mt-4 w-full h-11 rounded-xl bg-slate-900 hover:bg-slate-800 transition-colors text-white text-sm font-bold flex items-center justify-center gap-2"
           >
             {addProductMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            Incluir na Cesta
+            Incluir na Cesta e Selecionar Arquivo
           </button>
         </div>
 
