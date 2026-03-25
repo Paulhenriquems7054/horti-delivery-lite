@@ -7,11 +7,23 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 async function run() {
-  const { data, error } = await supabase.from('stores').select('*');
-  if (error) {
-    console.error("stores query error:", error);
-  } else {
-    console.log("stores:", JSON.stringify(data, null, 2));
+  const storeName = "Loja Teste";
+  const slug = "httpshorti-delivery-litevercelappteste";
+
+  try {
+    const { data, error } = await supabase.from("stores").insert({
+      owner_id: null,
+      name: storeName,
+      slug: slug,
+    }).select();
+
+    if (error) {
+      console.log("INSERT ERROR:", JSON.stringify(error, null, 2));
+    } else {
+      console.log("SUCCESS:", data);
+    }
+  } catch(e) {
+    console.log("Exception:", e);
   }
 }
 

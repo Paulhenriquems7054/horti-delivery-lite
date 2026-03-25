@@ -17,7 +17,7 @@ export function useDeliveryZones(storeId?: string) {
       if (!targetStoreId) {
         const { data: authData } = await supabase.auth.getUser();
         if (!authData.user) return [];
-        const { data: store } = await (supabase as any).from("stores").select("id").eq("owner_id", authData.user.id).single();
+        const { data: store } = await (supabase as any).from("stores").select("id").eq("user_id", authData.user.id).single();
         targetStoreId = store?.id;
       }
 

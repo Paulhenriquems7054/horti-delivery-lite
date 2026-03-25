@@ -66,7 +66,7 @@ export default function Login() {
 
         // 2. Prepara a Loja do Usuário
         const { error: storeError } = await (supabase as any).from("stores").insert({
-            owner_id: user.id,
+            user_id: user.id,
             name: storeName,
             slug: formattedSlug
         });
@@ -78,7 +78,7 @@ export default function Login() {
         }
         
         // 3. Cria o primeiro Catálogo (Basket) Ativo da Nova Loja
-        const { data: storeInfo } = await (supabase as any).from("stores").select("id").eq("owner_id", user.id).single();
+        const { data: storeInfo } = await (supabase as any).from("stores").select("id").eq("user_id", user.id).single();
         if (storeInfo) {
           await (supabase as any).from("baskets").insert({
             name: `Catálogo | ${storeName}`,
@@ -139,13 +139,22 @@ export default function Login() {
                                         <input 
                                             placeholder="sitio-sao-joao" 
                                             value={slug} 
-                                            onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} 
+                                            onChange={(e) => {
+                                                let val = e.target.value;
+                                                // Se o usuário colou uma URL, tenta extrair só a última parte (o slug)
+                                                if (val.includes('/') && val.indexOf('/') !== val.lastIndexOf('/')) {
+                                                  const parts = val.split('/').filter(Boolean);
+                                                  val = parts[parts.length - 1];
+                                                }
+                                                setSlug(val.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+                                            }} 
                                             required 
                                             className="flex-1 bg-transparent px-3 text-sm focus:outline-none placeholder:text-muted-foreground"
                                         />
                                     </div>
                                     <p className="text-[10px] text-slate-400 font-medium">Seus clientes vão acessar: hortidelivery.com.br/<span className="text-emerald-500 font-bold">{slug || "seu-nome"}</span></p>
                                 </div>
+
                             </div>
                         )}
 

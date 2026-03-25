@@ -30,7 +30,7 @@ export function useRealtimeOrders() {
       const { data: store } = await (supabase as any)
         .from("stores")
         .select("id")
-        .eq("owner_id", authData.user.id)
+        .eq("user_id", authData.user.id)
         .single();
         
       if (!store) {

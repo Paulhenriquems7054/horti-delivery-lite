@@ -1,7 +1,6 @@
-Signing up: test-1774447612915@example.com
-SignUp Error: {
-  "__isAuthError": true,
-  "name": "AuthApiError",
-  "status": 429,
-  "code": "over_email_send_rate_limit"
+Store Error: {
+  "code": "PGRST204",
+  "details": null,
+  "hint": null,
+  "message": "Could not find the 'owner_id' column of 'stores' in the schema cache"
 }
