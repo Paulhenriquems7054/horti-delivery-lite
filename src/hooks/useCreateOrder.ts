@@ -8,6 +8,7 @@ interface CreateOrderInput {
   address: string;
   total: number;
   products: BasketProduct[];
+  storeId?: string;
 }
 
 export function useCreateOrder() {
@@ -22,6 +23,7 @@ export function useCreateOrder() {
           address: input.address,
           total: input.total,
           status: "pending",
+          store_id: input.storeId,
         })
         .select()
         .single();

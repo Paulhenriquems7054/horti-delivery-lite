@@ -3,14 +3,21 @@ import { useActiveBasket } from "@/hooks/useActiveBasket";
 import { useCreateOrder } from "@/hooks/useCreateOrder";
 import { ProductCard } from "@/components/ProductCard";
 import { CheckoutForm } from "@/components/CheckoutForm";
-import { ShoppingCart, CheckCircle2, Leaf, Package } from "lucide-react";
+import { ShoppingCart, CheckCircle2, Leaf, Package, Store } from "lucide-react";
 import { toast } from "sonner";
+import { useParams, Navigate } from "react-router-dom";
+import { useStoreInfo } from "@/hooks/useStoreInfo";
 
 type Step = "basket" | "checkout" | "confirmation";
 
 export default function Index() {
-  const { data: basket, isLoading, isError } = useActiveBasket();
+  const { slug } = useParams();
+  const { data: store, isLoading: isStoreLoading, isError: isStoreError } = useStoreInfo(slug);
+  
+  // Agora os hooks carregam usando o store.id dessa loja!
+  const { data: basket, isLoading: isBasketLoading, isError: isBasketError } = useActiveBasket(store?.id);
   const createOrder = useCreateOrder();
+  
   const [step, setStep] = useState<Step>("basket");
   const [cart, setCart] = useState<Record<string, number>>({});
 
@@ -27,8 +34,8 @@ export default function Index() {
   const cartTotal = basket?.products.reduce((acc, p) => acc + (p.price * (cart[p.id] || 0)), 0) || 0;
   const totalItems = Object.values(cart).reduce((a, b) => a + b, 0);
 
-  /* ─── Loading ─── */
-  if (isLoading) {
+  /* ─── Loading Global ─── */
+  if (isStoreLoading || isBasketLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background gap-4">
         <div className="flex flex-col items-center gap-3">
@@ -44,8 +51,20 @@ export default function Index() {
     );
   }
 
-  /* ─── Erro de rede ─── */
-  if (isError) {
+  /* ─── Loja Não Encontrada ─── */
+  if (!store || isStoreError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6">
+        <Store className="h-20 w-20 text-muted-foreground/30 mb-4" />
+        <h1 className="text-2xl font-black text-foreground mb-2">Loja não encontrada</h1>
+        <p className="text-muted-foreground mb-6 text-center">O link parece incorreto ou a loja foi desativada.</p>
+        <button onClick={() => window.location.href = '/'} className="px-6 py-3 rounded-full gradient-hero text-white font-bold">Voltar ao Início</button>
+      </div>
+    );
+  }
+
+  /* ─── Erro de rede ou sem Cesta ─── */
+  if (isBasketError) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="text-center max-w-xs">
@@ -214,8 +233,9 @@ export default function Index() {
           <div className="mt-6">
             <CheckoutForm
               loading={createOrder.isPending}
-              basketName="Carrinho Personalizado"
+              basketName={basket.name}
               basketPrice={cartTotal}
+              storeId={store.id}  /* <- Enviamos ID pro Checkout para a zona! */
               onBack={() => setStep("basket")}
               onSubmit={(data) => {
                 const selectedProducts = basket.products
@@ -223,7 +243,7 @@ export default function Index() {
                   .map(p => ({ ...p, quantity: cart[p.id] }));
                   
                 createOrder.mutate(
-                  { ...data, total: cartTotal, products: selectedProducts },
+                  { ...data, total: data.total_with_fee || cartTotal, products: selectedProducts, storeId: store.id },
                   {
                     onSuccess: () => {
                       toast.success("Pedido enviado com sucesso! 🎉");

@@ -1,9 +1,10 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Leaf, Plus, Trash2, ArrowLeft, Loader2, Save } from "lucide-react";
+import { Leaf, Plus, Trash2, ArrowLeft, Loader2, Save, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useDeliveryZones, useManageDeliveryZone } from "@/hooks/useDeliveryZones";
 
 export default function AdminBasket() {
   const navigate = useNavigate();
@@ -16,6 +17,11 @@ export default function AdminBasket() {
   const [basketName, setBasketName] = useState("");
   const [basketPrice, setBasketPrice] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [newZoneName, setNewZoneName] = useState("");
+  const [newZoneFee, setNewZoneFee] = useState("");
+  const { data: zones } = useDeliveryZones();
+  const { addZone, deleteZone } = useManageDeliveryZone();
 
   const [editingItem, setEditingItem] = useState<any>(null);
 
@@ -34,7 +40,7 @@ export default function AdminBasket() {
 
       const { data: items, error: iErr } = await supabase
         .from("basket_items")
-        .select("id, quantity, products(id, name, price, unit)")
+        .select("id, quantity, products(id, name, price, unit, in_stock, image_url)")
         .eq("basket_id", bData.id)
         .order("id");
 
@@ -177,6 +183,36 @@ export default function AdminBasket() {
     onError: (err: any) => toast.error("Erro ao salvar: " + err.message)
   });
 
+  const toggleStockMutation = useMutation({
+    mutationFn: async ({ productId, inStock }: { productId: string, inStock: boolean }) => {
+      const { error } = await supabase.from("products").update({ in_stock: inStock } as any).eq("id", productId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Estoque atualizado!");
+      queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] });
+    }
+  });
+
+  const uploadImageMutation = useMutation({
+    mutationFn: async ({ productId, file }: { productId: string, file: File }) => {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${Date.now()}_${productId}.${fileExt}`;
+      const { data, error } = await supabase.storage.from('arquivos').upload(filePath, file);
+      if (error) throw error;
+      
+      const { data: urlData } = supabase.storage.from('arquivos').getPublicUrl(filePath);
+      
+      const { error: updateErr } = await supabase
+        .from('products')
+        .update({ image_url: urlData.publicUrl })
+        .eq('id', productId);
+        
+      if (updateErr) throw updateErr;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] })
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center">
@@ -230,7 +266,7 @@ export default function AdminBasket() {
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-muted-foreground">Taxa de Entrega Fixa ou Valor Mínimo (R$)</label>
+              <label className="text-xs font-bold text-muted-foreground">Valor Mínimo para Pedido (R$)</label>
               <input 
                 type="number" 
                 defaultValue={basket.price}
@@ -246,6 +282,44 @@ export default function AdminBasket() {
               {updateBasketMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Salvar Alterações Globais
             </button>
+          </div>
+        </div>
+
+        {/* Zonas de Entrega */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-border">
+          <h2 className="text-sm font-extrabold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+            <Truck className="h-4 w-4 text-primary" /> Taxas de Entrega / Bairros
+          </h2>
+          <div className="flex gap-2 mb-4">
+            <input type="text" placeholder="Bairro (ex: Centro)" value={newZoneName} onChange={e => setNewZoneName(e.target.value)} className="w-full h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" />
+            <input type="number" placeholder="Taxa R$ (ex: 5.00)" value={newZoneFee} onChange={e => setNewZoneFee(e.target.value)} className="w-[100px] sm:w-[120px] shrink-0 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" />
+            <button 
+              onClick={() => {
+                if(newZoneName.trim() && !isNaN(parseFloat(newZoneFee))) {
+                  addZone.mutate({ neighborhood: newZoneName, fee: parseFloat(newZoneFee) }, {
+                    onSuccess: () => {
+                      setNewZoneName(""); setNewZoneFee(""); toast.success("Bairro adicionado");
+                    }
+                  });
+                }
+              }}
+              disabled={addZone.isPending}
+              className="h-11 w-11 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 disabled:opacity-50"
+            >
+              {addZone.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            </button>
+          </div>
+          <div className="space-y-2">
+            {zones?.length === 0 && <p className="text-xs text-muted-foreground text-center bg-slate-50 p-3 rounded-lg border border-slate-100">Nenhum bairro cadastrado. Seus clientes enviarão pedidos sem taxa de frete no momento.</p>}
+            {zones?.map(z => (
+              <div key={z.id} className="flex items-center justify-between p-2.5 px-3 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="font-bold text-sm text-slate-700">{z.neighborhood}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-primary font-bold">R$ {z.fee.toFixed(2).replace(".", ",")}</span>
+                  <button onClick={() => deleteZone.mutate(z.id)} className="text-red-400 p-1 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors"><Trash2 className="h-4 w-4" /></button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -312,19 +386,25 @@ export default function AdminBasket() {
                       const file = e.target.files?.[0];
                       if (file) {
                          try {
-                           const text = await file.text();
+                           const rawText = await file.text();
+                           // Limpa quebras nulas, contra-barras perigosas ou caracteres nulos que o Postgres rejeita
+                           const text = rawText
+                             .replace(/\x00/g, '')
+                             .replace(/\\u/gi, 'u') 
+                             .replace(/\\/g, '-');
+
                            const lines = text.split('\n').filter(l => l.trim().length > 0);
                            
                            const startIndex = lines[0].toLowerCase().includes('nome') ? 1 : 0;
                            const productsToInsert = [];
                            
                            for (let i = startIndex; i < lines.length; i++) {
-                               const parts = lines[i].split(',').map(s => s.trim());
+                               const parts = lines[i].split(',').map(s => s.trim().replace(/[\x00-\x1F\x7F]/g, ''));
                                const name = parts[0];
                                if (!name) continue;
                                
                                const price = parseFloat(parts[1]?.replace(',', '.') || "0");
-                               const unit = parts[2]?.toLowerCase() === 'kg' ? 'kg' : 'un';
+                               const unit = parts[2]?.toLowerCase().includes('kg') ? 'kg' : 'un';
                                
                                productsToInsert.push({ 
                                  name, 
@@ -436,14 +516,38 @@ export default function AdminBasket() {
                   ) : (
                     <div className="flex items-center justify-between gap-3 animate-slide-up">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-accent rounded-lg flex items-center justify-center text-lg">
-                          🥬
-                        </div>
+                        <label className="h-10 w-10 shrink-0 bg-accent rounded-lg flex items-center justify-center text-lg cursor-pointer hover:brightness-95 transition-all overflow-hidden relative group shadow-sm border border-border/50" title="Mudar foto do produto">
+                           {item.products.image_url ? (
+                              <img src={item.products.image_url} alt="" className="w-full h-full object-cover" />
+                           ) : (
+                              <span className="opacity-80">🥬</span>
+                           )}
+                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Plus className="h-4 w-4 text-white" />
+                           </div>
+                           <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                 toast.loading("Enviando...", { id: `up-${item.id}` });
+                                 uploadImageMutation.mutate({ productId: item.products.id, file: e.target.files[0] }, {
+                                    onSuccess: () => toast.success("Foto atualizada!", { id: `up-${item.id}` }),
+                                    onError: () => toast.error("Erro no envio", { id: `up-${item.id}` })
+                                 });
+                              }
+                           }} />
+                        </label>
                         <div>
-                          <p className="font-extrabold text-foreground">{item.products.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Por {item.products.unit === "kg" ? "kg" : "unidade"} • R$ {item.products.price?.toFixed(2)}
-                          </p>
+                          <p className={`font-extrabold text-foreground ${!item.products.in_stock && 'line-through opacity-50'}`}>{item.products.name}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-xs text-muted-foreground">
+                              Por {item.products.unit === "kg" ? "kg" : "und"} • R$ {item.products.price?.toFixed(2)}
+                            </p>
+                            <button 
+                              onClick={() => toggleStockMutation.mutate({ productId: item.products.id, inStock: !item.products.in_stock })}
+                              className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md transition-colors ${item.products.in_stock ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}
+                            >
+                              {item.products.in_stock ? 'Disponível' : 'Esgotado!'}
+                            </button>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">

@@ -1,0 +1,7 @@
+Signing up: test-1774447612915@example.com
+SignUp Error: {
+  "__isAuthError": true,
+  "name": "AuthApiError",
+  "status": 429,
+  "code": "over_email_send_rate_limit"
+}

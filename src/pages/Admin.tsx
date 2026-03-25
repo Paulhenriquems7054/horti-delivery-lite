@@ -141,30 +141,7 @@ export default function Admin() {
             </p>
           </div>
         </div>
-        {/* Filtros */}
-        <div className="flex gap-2 overflow-x-auto pb-1 mb-5 scrollbar-hide">
-          {FILTERS.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setFilter(f.value)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-4 h-9 rounded-full text-sm font-bold transition-all
-                ${filter === f.value
-                  ? "gradient-hero text-white shadow-button"
-                  : "bg-white border border-border text-muted-foreground hover:bg-accent"
-                }`}
-            >
-              <span>{f.emoji}</span>
-              <span>{f.label}</span>
-              <span
-                className={`ml-0.5 h-5 w-5 rounded-full text-xs flex items-center justify-center
-                  ${filter === f.value ? "bg-white/25 text-white" : "bg-muted text-muted-foreground"}`}
-              >
-                {counts[f.value]}
-              </span>
-            </button>
-          ))}
-        </div>
-
+        
         {/* Loading */}
         {loading && (
           <div className="flex items-center justify-center gap-3 py-16">
@@ -173,109 +150,105 @@ export default function Admin() {
           </div>
         )}
 
-        {/* Sem pedidos */}
-        {!loading && filtered.length === 0 && (
-          <div className="text-center py-16 text-muted-foreground">
-            <Package className="mx-auto h-14 w-14 mb-3 opacity-30" />
-            <p className="font-bold text-lg">Nenhum pedido{filter !== "all" ? " neste filtro" : ""}</p>
-            <p className="text-sm mt-1">
-              {filter === "all"
-                ? "Os pedidos aparecerão aqui em tempo real 🔄"
-                : "Tente outro filtro"}
-            </p>
+        {/* Quadro Kanban (Horizontal Scroll Mobile, Grid Desktop) */}
+        {!loading && (
+          <div className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-muted-foreground/20 sm:grid sm:grid-cols-4 sm:overflow-visible sm:snap-none">
+            
+            {[
+              { id: "pending", title: "Novos Pedidos", icon: "🔔", bg: "bg-slate-100", border: "border-slate-200" },
+              { id: "preparing", title: "Separando", icon: "🍳", bg: "bg-blue-50", border: "border-blue-100" },
+              { id: "delivering", title: "Na Rota", icon: "🛵", bg: "bg-amber-50", border: "border-amber-100" },
+              { id: "delivered", title: "Concluído", icon: "✅", bg: "bg-emerald-50", border: "border-emerald-100" },
+            ].map((col) => {
+              const columnOrders = orders.filter(o => o.status === col.id);
+              
+              return (
+                <div key={col.id} className={`flex-shrink-0 w-[85vw] sm:w-auto snap-center rounded-2xl ${col.bg} border ${col.border} flex flex-col max-h-[70vh] shadow-sm`}>
+                  {/* Cabeçalho da Coluna Kanban */}
+                  <div className="p-3 border-b border-black/5 bg-black/5 flex items-center justify-between sticky top-0 rounded-t-2xl">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{col.icon}</span>
+                      <h3 className="font-extrabold text-slate-800 text-sm">{col.title}</h3>
+                    </div>
+                    <span className="bg-white/60 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full">
+                      {columnOrders.length}
+                    </span>
+                  </div>
+
+                  {/* Lista de Cards */}
+                  <div className="p-3 space-y-3 overflow-y-auto flex-1 scrollbar-hide">
+                    {columnOrders.length === 0 ? (
+                      <div className="py-6 text-center text-slate-400 text-xs font-semibold">
+                        Vazio
+                      </div>
+                    ) : (
+                      columnOrders.map(order => (
+                        <div key={order.id} className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-3 hover:shadow-md transition-shadow">
+                          {/* Nome e ID */}
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <p className="font-extrabold text-sm text-slate-800 leading-tight">{order.customer_name}</p>
+                              <p className="text-[10px] text-slate-400 font-mono mt-0.5">#{order.id.split('-')[0]}</p>
+                            </div>
+                            <p className="font-black text-primary text-sm whitespace-nowrap">R$ {order.total?.toFixed(2)}</p>
+                          </div>
+                          
+                          {/* Endereço Breve */}
+                          <div className="flex items-start gap-1.5 text-xs text-slate-500 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                            <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                            <span className="line-clamp-2 leading-tight">{order.address}</span>
+                          </div>
+
+                          {/* Botões de Ação do Kanban */}
+                          <div className="pt-2 border-t border-slate-100 flex gap-2">
+                            {col.id === "pending" && (
+                              <button 
+                                onClick={() => handleStatus(order.id, "preparing")}
+                                disabled={updating === order.id}
+                                className="flex-1 h-8 rounded-lg bg-blue-100 text-blue-700 text-xs font-bold hover:bg-blue-200 active:bg-blue-300 transition-colors flex justify-center items-center gap-1"
+                              >
+                                {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Preparar 🍳"}
+                              </button>
+                            )}
+                            {col.id === "preparing" && (
+                              <button 
+                                onClick={() => handleStatus(order.id, "delivering")}
+                                disabled={updating === order.id}
+                                className="flex-1 h-8 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold hover:bg-amber-200 active:bg-amber-300 transition-colors flex justify-center items-center gap-1"
+                              >
+                                {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Enviar Moto 🛵"}
+                              </button>
+                            )}
+                            {col.id === "delivering" && (
+                              <button 
+                                onClick={() => handleStatus(order.id, "delivered")}
+                                disabled={updating === order.id}
+                                className="flex-1 h-8 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-bold hover:bg-emerald-200 active:bg-emerald-300 transition-colors flex justify-center items-center gap-1"
+                              >
+                                {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Entregue ✅"}
+                              </button>
+                            )}
+                            {(col.id === "pending" || col.id === "preparing") && (
+                              <a 
+                                href={`https://wa.me/55${order.phone.replace(/\D/g, '')}`} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="h-8 w-8 rounded-lg bg-green-50 text-green-600 border border-green-200 flex items-center justify-center hover:bg-green-100 transition-colors"
+                                title="Chamar no WhatsApp"
+                              >
+                                <PhoneCall className="h-3.5 w-3.5" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-
-        {/* Lista de pedidos */}
-        <div className="space-y-3">
-          {filtered.map((order) => (
-            <div
-              key={order.id}
-              className="bg-white rounded-2xl shadow-card border border-border/60 overflow-hidden transition-all"
-            >
-              {/* Cabeçalho do card */}
-              <div className="flex items-start justify-between gap-2 p-4 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-accent flex items-center justify-center flex-shrink-0">
-                    <span className="text-xl">🧺</span>
-                  </div>
-                  <div>
-                    <p className="font-extrabold text-foreground leading-tight">{order.customer_name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      #{order.id.slice(0, 8).toUpperCase()}
-                    </p>
-                  </div>
-                </div>
-                <OrderStatusBadge status={order.status} />
-              </div>
-
-              {/* Detalhes */}
-              <div className="px-4 pb-3 space-y-1.5">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <PhoneCall className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span className="font-semibold">{order.phone}</span>
-                </div>
-                <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                  <span>{order.address}</span>
-                </div>
-                <div className="flex items-center justify-between mt-2">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>{new Date(order.created_at).toLocaleString("pt-BR")}</span>
-                  </div>
-                  <p className="text-lg font-extrabold text-primary">
-                    R$ {order.total.toFixed(2).replace(".", ",")}
-                  </p>
-                </div>
-              </div>
-
-              {/* Ações */}
-              {order.status !== "delivered" && (
-                <div className="border-t border-border/60 px-4 py-3 flex gap-2">
-                  {order.status === "pending" && (
-                    <button
-                      id={`btn-preparar-${order.id}`}
-                      disabled={updating === order.id}
-                      onClick={() => handleStatus(order.id, "preparing")}
-                      className="flex-1 h-10 rounded-xl gradient-hero text-white text-sm font-bold flex items-center justify-center gap-1.5 shadow-button disabled:opacity-60 transition-opacity active:opacity-80"
-                    >
-                      {updating === order.id ? (
-                        <RefreshCw className="h-4 w-4 animate-spin-slow" />
-                      ) : (
-                        <Truck className="h-4 w-4" />
-                      )}
-                      Preparar
-                    </button>
-                  )}
-                  <button
-                    id={`btn-entregue-${order.id}`}
-                    disabled={updating === order.id}
-                    onClick={() => handleStatus(order.id, "delivered")}
-                    className="flex-1 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-bold flex items-center justify-center gap-1.5 disabled:opacity-60 transition-colors hover:bg-emerald-100 active:bg-emerald-200"
-                  >
-                    {updating === order.id ? (
-                      <RefreshCw className="h-4 w-4 animate-spin-slow" />
-                    ) : (
-                      <CheckCircle className="h-4 w-4" />
-                    )}
-                    Entregue
-                  </button>
-                </div>
-              )}
-
-              {/* Entregue */}
-              {order.status === "delivered" && (
-                <div className="border-t border-emerald-100 bg-emerald-50 px-4 py-2.5 flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-emerald-500" />
-                  <p className="text-sm font-bold text-emerald-600">
-                    Pedido entregue com sucesso 🎉
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
       </main>
     </div>
   );
