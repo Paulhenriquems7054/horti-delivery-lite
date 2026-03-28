@@ -23,6 +23,7 @@ export default function Admin() {
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [updating, setUpdating] = useState<string | null>(null);
   const [storeSlug, setStoreSlug] = useState<string>("default");
+  const [storeName, setStoreName] = useState<string>("");
   const [deliveryPin, setDeliveryPin] = useState<string>("1234");
   const navigate = useNavigate();
 
@@ -32,12 +33,13 @@ export default function Admin() {
       if (!data.user) return;
       (supabase as any)
         .from("stores")
-        .select("slug, delivery_pin")
+        .select("slug, name, delivery_pin")
         .eq("user_id", data.user.id)
         .maybeSingle()
         .then(({ data: store }: any) => {
           if (store) {
             setStoreSlug(store.slug);
+            setStoreName(store.name);
             setDeliveryPin(store.delivery_pin || "1234");
           }
         });
@@ -96,8 +98,12 @@ export default function Admin() {
               <Leaf className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-base font-extrabold text-white leading-tight">Painel Admin</h1>
-              <p className="text-xs text-white/75">horti-delivery-lite · Tempo real</p>
+              <h1 className="text-base font-extrabold text-white leading-tight">
+                {storeName || "Painel Admin"}
+              </h1>
+              <p className="text-xs text-white/75">
+                {storeName ? `/${storeSlug} · Tempo real` : "horti-delivery-lite · Tempo real"}
+              </p>
             </div>
           </div>
           {/* Indicador live e Logout */}
@@ -185,7 +191,7 @@ export default function Admin() {
           </button>
 
           <a
-            href={`/delivery/${storeSlug}`}
+            href={`/${storeSlug}/delivery`}
             target="_blank"
             rel="noreferrer"
             className="bg-white border-2 border-orange-200 p-4 rounded-2xl flex items-center gap-3 shadow-sm hover:border-orange-400 hover:bg-orange-50/30 transition-all sm:col-span-2"
@@ -196,7 +202,7 @@ export default function Admin() {
             <div className="text-left flex-1 min-w-0">
               <h2 className="font-extrabold text-foreground text-base leading-tight">Tela do Entregador</h2>
               <p className="text-muted-foreground text-xs mt-0.5">
-                /delivery/{storeSlug} • PIN: <span className="font-mono font-bold text-foreground">{deliveryPin}</span>
+                /{storeSlug}/delivery • PIN: <span className="font-mono font-bold text-foreground">{deliveryPin}</span>
               </p>
             </div>
           </a>

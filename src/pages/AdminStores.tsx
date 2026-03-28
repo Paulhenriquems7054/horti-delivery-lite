@@ -200,12 +200,12 @@ export default function AdminStores() {
                   <p className="text-xs text-muted-foreground mt-1">
                     🛵 Entregador:{" "}
                     <a
-                      href={`/delivery/${store.slug}`}
+                      href={`/${store.slug}/delivery`}
                       target="_blank"
                       rel="noreferrer"
                       className="text-primary font-mono hover:underline"
                     >
-                      /delivery/{store.slug}
+                      /{store.slug}/delivery
                     </a>
                     {" "}• PIN: <span className="font-mono font-bold">{store.delivery_pin || "1234"}</span>
                   </p>

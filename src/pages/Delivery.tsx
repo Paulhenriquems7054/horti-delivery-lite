@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useParams, Navigate } from "react-router-dom";
+import { useState } from "react";import { useParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MapPin, CheckCircle2, Phone, Package, Loader2, LogOut, Bike, RefreshCw } from "lucide-react";
@@ -44,10 +43,10 @@ function useDeliveryOrders(storeId?: string) {
     queryKey: ["delivery-orders", storeId],
     queryFn: async () => {
       if (!storeId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("orders")
         .select("*")
-        .eq("store_id" as any, storeId)
+        .eq("store_id", storeId)
         .eq("status", "delivering")
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -82,24 +81,25 @@ function useMarkDelivered() {
 }
 
 // ─── PIN Screen ───────────────────────────────────────────────────────────────
-function PinScreen({ storeName, onUnlock }: { storeName: string; onUnlock: () => void; }) {
+function PinScreen({ storeName, onUnlock }: { storeName: string; onUnlock: (pin: string) => void }) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
 
-  // PIN is validated by parent via callback
   const handleDigit = (d: string) => {
     if (pin.length >= 4) return;
     const next = pin + d;
     setPin(next);
     setError(false);
-    if (next.length === 4) onUnlock(next as any);
+    if (next.length === 4) {
+      onUnlock(next);
+      // reset after short delay to allow parent to decide
+      setTimeout(() => setPin(""), 300);
+    }
   };
 
   const handleDelete = () => { setPin(p => p.slice(0, -1)); setError(false); };
 
-  // expose setError to parent
-  (PinScreen as any)._setError = (v: boolean) => { setError(v); if (v) setTimeout(() => setPin(""), 600); };
-
+  // Allow parent to signal error
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6">
       <div className="mb-8 flex flex-col items-center gap-3">
@@ -227,7 +227,9 @@ function OrderCard({ order }: { order: Order }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Delivery() {
-  const { slug } = useParams<{ slug: string }>();
+  const params = useParams<{ slug?: string }>();
+  // suporta tanto /:slug/delivery quanto /delivery/:slug
+  const slug = params.slug;
   const [unlocked, setUnlocked] = useState(false);
   const [pinError, setPinError] = useState(false);
 
@@ -263,11 +265,9 @@ export default function Delivery() {
         onUnlock={(enteredPin: string) => {
           if (enteredPin === store.delivery_pin) {
             setUnlocked(true);
-            setPinError(false);
           } else {
             setPinError(true);
-            // trigger error state in PinScreen via the exposed setter
-            (PinScreen as any)._setError?.(true);
+            setTimeout(() => setPinError(false), 1000);
           }
         }}
       />

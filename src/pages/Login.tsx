@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Leaf, Store, Link as LinkIcon } from "lucide-react";
+import { Leaf, Store, Link as LinkIcon, Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
     const [mode, setMode] = useState<"login" | "register">("login");
@@ -19,6 +19,8 @@ export default function Login() {
     const [slug, setSlug] = useState("");
     
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -199,15 +201,24 @@ export default function Login() {
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label className="text-slate-600 font-bold">Nova Senha</Label>
-                                    <Input 
-                                        type="password" 
-                                        placeholder="Mínimo 6 caracteres" 
-                                        value={newPassword} 
-                                        onChange={(e) => setNewPassword(e.target.value)} 
-                                        required 
-                                        autoComplete="new-password"
-                                        className="h-12 rounded-xl" 
-                                    />
+                                    <div className="relative">
+                                        <Input 
+                                            type={showNewPassword ? "text" : "password"}
+                                            placeholder="Mínimo 6 caracteres" 
+                                            value={newPassword} 
+                                            onChange={(e) => setNewPassword(e.target.value)} 
+                                            required 
+                                            autoComplete="new-password"
+                                            className="h-12 rounded-xl pr-11" 
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNewPassword(v => !v)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                        >
+                                            {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                        </button>
+                                    </div>
                                 </div>
                                 <Button type="submit" className="w-full h-12 rounded-xl gradient-hero mt-2 shadow-button text-base font-bold" disabled={loading}>
                                     {loading ? "Atualizando..." : "Salvar Nova Senha"}
@@ -259,14 +270,23 @@ export default function Login() {
                                 </div>
                                 <div className="space-y-1.5 relative">
                                     <Label className="text-slate-600 font-bold">Senha</Label>
-                                    <Input 
-                                        type="password" 
-                                        value={password} 
-                                        onChange={(e) => setPassword(e.target.value)} 
-                                        required={mode === "login"}
-                                        className="h-12 rounded-xl" 
-                                        autoComplete={mode === "login" ? "current-password" : "new-password"} 
-                                    />
+                                    <div className="relative">
+                                        <Input 
+                                            type={showPassword ? "text" : "password"}
+                                            value={password} 
+                                            onChange={(e) => setPassword(e.target.value)} 
+                                            required={mode === "login"}
+                                            className="h-12 rounded-xl pr-11" 
+                                            autoComplete={mode === "login" ? "current-password" : "new-password"} 
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(v => !v)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                        >
+                                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                        </button>
+                                    </div>
                                     {mode === "login" && (
                                         <button
                                             type="button"

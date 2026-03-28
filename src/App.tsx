@@ -46,7 +46,10 @@ const App = () => (
           <Route path="/admin/delivery-zones" element={<ProtectedRoute><AdminDeliveryZones /></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>} />
 
-          {/* ── Loja do cliente — DEVE ser a última rota dinâmica ── */}
+          {/* ── Entregador por loja ── */}
+          <Route path="/:slug/delivery" element={<Delivery />} />
+
+          {/* ── Loja do cliente — última rota dinâmica ── */}
           <Route path="/:slug" element={<Index />} />
 
           <Route path="*" element={<NotFound />} />
