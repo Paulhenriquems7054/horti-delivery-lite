@@ -8,8 +8,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-// ─── Superadmin PIN (mude para algo seguro) ───────────────────────────────────
-const SUPER_PIN = "dev2025";
+// ─── Superadmin PIN — lido de variável de ambiente ───────────────────────────
+// Defina VITE_SUPER_PIN no .env e no Vercel (Settings > Environment Variables)
+// NUNCA commite a senha real aqui
+const SUPER_PIN = import.meta.env.VITE_SUPER_PIN ?? "dev2025";
 
 interface Store {
   id: string;

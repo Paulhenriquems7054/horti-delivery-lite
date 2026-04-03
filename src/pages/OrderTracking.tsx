@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Package, MapPin, Clock, CheckCircle2, ChefHat, Bike, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 type Order = {
   id: string;
@@ -117,11 +118,16 @@ function useRealtimeCustomerOrders(phone: string) {
 export default function OrderTracking() {
   const [phone, setPhone] = useState("");
   const [searchPhone, setSearchPhone] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HCaptcha>(null);
   const { orders, loading } = useRealtimeCustomerOrders(searchPhone);
+
+  const HCAPTCHA_SITE_KEY = (import.meta as any).env?.VITE_HCAPTCHA_SITE_KEY ?? "10000000-ffff-ffff-ffff-000000000001";
 
   const handleSearch = () => {
     const clean = phone.replace(/\D/g, "");
     if (clean.length < 10) { toast.error("Digite um telefone válido"); return; }
+    if (!captchaToken) { toast.error("Complete a verificação de segurança"); return; }
     setSearchPhone(clean);
   };
 
@@ -149,6 +155,15 @@ export default function OrderTracking() {
             <Button onClick={handleSearch} disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             </Button>
+          </div>
+          <div className="mt-3 flex justify-center">
+            <HCaptcha
+              ref={captchaRef}
+              sitekey={HCAPTCHA_SITE_KEY}
+              onVerify={(token) => setCaptchaToken(token)}
+              onExpire={() => setCaptchaToken(null)}
+              size="normal"
+            />
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/services/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Basket {
   id: string;
@@ -17,14 +17,26 @@ export interface BasketItemWithProduct {
   product_name?: string;
 }
 
-export function useBaskets() {
+export function useBaskets(storeId?: string) {
   return useQuery({
-    queryKey: ["baskets"],
+    queryKey: ["baskets", storeId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("baskets")
-        .select("*")
-        .order("created_at", { ascending: false });
+      let targetStoreId = storeId;
+
+      if (!targetStoreId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+        const { data: store } = await (supabase as any)
+          .from("stores").select("id").eq("user_id", user.id).maybeSingle();
+        targetStoreId = store?.id;
+      }
+
+      let query = supabase.from("baskets").select("*").order("created_at", { ascending: false });
+      if (targetStoreId) {
+        query = query.eq("store_id", targetStoreId) as any;
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as Basket[];
     },

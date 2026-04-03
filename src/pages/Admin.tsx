@@ -18,6 +18,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { LogOut, DollarSign } from "lucide-react";
+import { logAuditEvent } from "@/hooks/useAuditLog";
+import { useTenant } from "@/contexts/TenantContext";
 
 type StatusFilter = "all" | "pending" | "preparing" | "delivered";
 
@@ -25,6 +27,7 @@ export default function Admin() {
   const { orders, loading } = useRealtimeOrders();
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [updating, setUpdating] = useState<string | null>(null);
+  const { store: tenantStore } = useTenant();
   const [storeSlug, setStoreSlug] = useState<string>("default");
   const [storeId, setStoreId] = useState<string>("");
   const [storeName, setStoreName] = useState<string>("");
@@ -35,25 +38,15 @@ export default function Admin() {
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
 
-  // Carrega o slug e PIN da loja do usuário logado
+  // Use TenantContext — no more manual store resolution
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) return;
-      (supabase as any)
-        .from("stores")
-        .select("id, slug, name, delivery_pin")
-        .eq("user_id", data.user.id)
-        .maybeSingle()
-        .then(({ data: store }: any) => {
-          if (store) {
-            setStoreId(store.id);
-            setStoreSlug(store.slug);
-            setStoreName(store.name);
-            setDeliveryPin(store.delivery_pin || "1234");
-          }
-        });
-    });
-  }, []);
+    if (tenantStore) {
+      setStoreId(tenantStore.id);
+      setStoreSlug(tenantStore.slug);
+      setStoreName(tenantStore.name);
+      setDeliveryPin(tenantStore.delivery_pin || "1234");
+    }
+  }, [tenantStore]);
 
   const handleSavePin = async () => {
     if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
@@ -85,6 +78,7 @@ export default function Admin() {
   };
 
   const handleLogout = async () => {
+    await logAuditEvent("logout", storeId || undefined);
     await supabase.auth.signOut();
     navigate("/login");
   };

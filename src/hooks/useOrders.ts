@@ -37,21 +37,9 @@ export function useRealtimeOrders() {
         .maybeSingle();
 
       if (!store) {
-        // Sem loja vinculada: carrega todos os pedidos (fallback para admin único)
-        const { data, error } = await supabase
-          .from("orders")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        if (!error) setOrders((data as Order[]) ?? []);
+        // No store linked — return empty instead of leaking all orders
+        setOrders([]);
         setLoading(false);
-
-        channel = supabase
-          .channel("orders-realtime-all")
-          .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
-            handleRealtimeEvent(payload);
-          })
-          .subscribe();
         return;
       }
 

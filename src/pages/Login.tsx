@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Leaf, Store, Link as LinkIcon, Eye, EyeOff } from "lucide-react";
+import { logAuditEvent } from "@/hooks/useAuditLog";
 
 export default function Login() {
     const [mode, setMode] = useState<"login" | "register">("login");
@@ -60,6 +60,10 @@ export default function Login() {
         if (error) {
             toast.error(error.message);
         } else {
+            // Log de auditoria
+            const { data: store } = await (supabase as any)
+                .from("stores").select("id").eq("user_id", (await supabase.auth.getUser()).data.user?.id).maybeSingle();
+            await logAuditEvent("login", store?.id, { email });
             toast.success("Login bem-sucedido");
             navigate("/admin");
         }
@@ -107,7 +111,13 @@ export default function Login() {
         e.preventDefault();
         if (!storeName.trim()) return toast.error("Informe o nome da loja");
         if (slug.length < 3) return toast.error("O link da loja precisa ter pelo menos 3 caracteres");
+        
+        // Slugs reservados — não podem ser usados como nome de loja
+        const RESERVED = ["admin","login","track","delivery","superadmin","delivery-tracking","api","static","public"];
         const formattedSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "");
+        if (RESERVED.includes(formattedSlug)) {
+            return toast.error("Esse link é reservado. Escolha outro nome.");
+        }
 
         setLoading(true);
         
