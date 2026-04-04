@@ -49,6 +49,10 @@ CREATE INDEX IF NOT EXISTS idx_weighing_history_date ON public.weighing_history(
 -- 6. RLS para weighing_history
 ALTER TABLE public.weighing_history ENABLE ROW LEVEL SECURITY;
 
+-- Remove políticas antigas se existirem
+DROP POLICY IF EXISTS "Admin can view weighing history" ON public.weighing_history;
+DROP POLICY IF EXISTS "Admin can insert weighing history" ON public.weighing_history;
+
 -- Admin pode ver histórico de pesagens da sua loja
 CREATE POLICY "Admin can view weighing history" ON public.weighing_history
   FOR SELECT
@@ -121,6 +125,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Remove trigger antigo se existir
+DROP TRIGGER IF EXISTS recalculate_order_total_on_weighing ON public.order_items;
+
+-- Cria trigger
 CREATE TRIGGER recalculate_order_total_on_weighing
   AFTER UPDATE OF final_price ON public.order_items
   FOR EACH ROW

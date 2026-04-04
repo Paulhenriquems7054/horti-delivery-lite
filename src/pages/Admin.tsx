@@ -1,5 +1,6 @@
 import { useRealtimeOrders, updateOrderStatus, deleteOrder } from "@/hooks/useOrders";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
+import { WeighingModal } from "@/components/WeighingModal";
 import {
   Leaf,
   Package,
@@ -14,6 +15,7 @@ import {
   Check,
   Trash2,
   AlertTriangle,
+  Scale,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
@@ -41,6 +43,7 @@ export default function Admin() {
   const [allowDeleteDelivered, setAllowDeleteDelivered] = useState(false);
   const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [weighingOrder, setWeighingOrder] = useState<any | null>(null);
   const navigate = useNavigate();
 
   // Use TenantContext — no more manual store resolution
@@ -466,131 +469,155 @@ export default function Admin() {
                           </div>
 
                           {/* Botões de Ação do Kanban */}
-                          <div className="pt-2 border-t border-slate-100 flex gap-2">
-                            {col.id === "pending" && (
-                              <>
-                                <button 
-                                  onClick={() => handleStatus(order.id, "preparing")}
-                                  disabled={updating === order.id}
-                                  className="flex-1 h-8 rounded-lg bg-blue-100 text-blue-700 text-xs font-bold hover:bg-blue-200 active:bg-blue-300 transition-colors flex justify-center items-center gap-1"
-                                >
-                                  {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Preparar 🍳"}
-                                </button>
+                          <div className="pt-2 border-t border-slate-100 space-y-2">
+                            {/* Primeira linha: Ações principais */}
+                            <div className="flex gap-2">
+                              {col.id === "pending" && (
+                                <>
+                                  <button 
+                                    onClick={() => handleStatus(order.id, "preparing")}
+                                    disabled={updating === order.id}
+                                    className="flex-1 h-8 rounded-lg bg-blue-100 text-blue-700 text-xs font-bold hover:bg-blue-200 active:bg-blue-300 transition-colors flex justify-center items-center gap-1"
+                                  >
+                                    {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Preparar 🍳"}
+                                  </button>
+                                  <button
+                                    onClick={() => setWeighingOrder(order)}
+                                    className="h-8 w-8 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors flex items-center justify-center"
+                                    title="Pesar itens"
+                                  >
+                                    <Scale className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteOrder(order.id, order.status)}
+                                    disabled={deletingOrder === order.id}
+                                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${
+                                      confirmDelete === order.id
+                                        ? "bg-red-500 text-white"
+                                        : "bg-red-50 text-red-600 hover:bg-red-100"
+                                    }`}
+                                    title="Excluir pedido"
+                                  >
+                                    {deletingOrder === order.id ? (
+                                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                    ) : confirmDelete === order.id ? (
+                                      <AlertTriangle className="h-3.5 w-3.5" />
+                                    ) : (
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                  <a 
+                                    href={`https://wa.me/55${order.phone.replace(/\D/g, '')}`} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="h-8 w-8 rounded-lg bg-green-50 text-green-600 border border-green-200 flex items-center justify-center hover:bg-green-100 transition-colors"
+                                    title="Chamar no WhatsApp"
+                                  >
+                                    <PhoneCall className="h-3.5 w-3.5" />
+                                  </a>
+                                </>
+                              )}
+                              {col.id === "preparing" && (
+                                <>
+                                  <button 
+                                    onClick={() => handleStatus(order.id, "delivering")}
+                                    disabled={updating === order.id}
+                                    className="flex-1 h-8 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold hover:bg-amber-200 active:bg-amber-300 transition-colors flex justify-center items-center gap-1"
+                                  >
+                                    {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Enviar Moto 🛵"}
+                                  </button>
+                                  <button
+                                    onClick={() => setWeighingOrder(order)}
+                                    className="h-8 w-8 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors flex items-center justify-center"
+                                    title="Pesar itens"
+                                  >
+                                    <Scale className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteOrder(order.id, order.status)}
+                                    disabled={deletingOrder === order.id}
+                                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${
+                                      confirmDelete === order.id
+                                        ? "bg-red-500 text-white"
+                                        : "bg-red-50 text-red-600 hover:bg-red-100"
+                                    }`}
+                                    title="Excluir pedido"
+                                  >
+                                    {deletingOrder === order.id ? (
+                                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                    ) : confirmDelete === order.id ? (
+                                      <AlertTriangle className="h-3.5 w-3.5" />
+                                    ) : (
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                  <a 
+                                    href={`https://wa.me/55${order.phone.replace(/\D/g, '')}`} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="h-8 w-8 rounded-lg bg-green-50 text-green-600 border border-green-200 flex items-center justify-center hover:bg-green-100 transition-colors"
+                                    title="Chamar no WhatsApp"
+                                  >
+                                    <PhoneCall className="h-3.5 w-3.5" />
+                                  </a>
+                                </>
+                              )}
+                              {col.id === "delivering" && (
+                                <>
+                                  <button 
+                                    onClick={() => handleStatus(order.id, "delivered")}
+                                    disabled={updating === order.id}
+                                    className="flex-1 h-8 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-bold hover:bg-emerald-200 active:bg-emerald-300 transition-colors flex justify-center items-center gap-1"
+                                  >
+                                    {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Entregue ✅"}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteOrder(order.id, order.status)}
+                                    disabled={deletingOrder === order.id}
+                                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${
+                                      confirmDelete === order.id
+                                        ? "bg-red-500 text-white"
+                                        : "bg-red-50 text-red-600 hover:bg-red-100"
+                                    }`}
+                                    title="Excluir pedido"
+                                  >
+                                    {deletingOrder === order.id ? (
+                                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                    ) : confirmDelete === order.id ? (
+                                      <AlertTriangle className="h-3.5 w-3.5" />
+                                    ) : (
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                </>
+                              )}
+                              {col.id === "delivered" && allowDeleteDelivered && (
                                 <button
                                   onClick={() => handleDeleteOrder(order.id, order.status)}
                                   disabled={deletingOrder === order.id}
-                                  className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${
+                                  className={`flex-1 h-8 rounded-lg flex items-center justify-center gap-1 text-xs font-bold transition-colors ${
                                     confirmDelete === order.id
                                       ? "bg-red-500 text-white"
                                       : "bg-red-50 text-red-600 hover:bg-red-100"
                                   }`}
-                                  title="Excluir pedido"
+                                  title="Excluir pedido concluído"
                                 >
                                   {deletingOrder === order.id ? (
-                                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                    <RefreshCw className="h-3 w-3 animate-spin" />
                                   ) : confirmDelete === order.id ? (
-                                    <AlertTriangle className="h-3.5 w-3.5" />
+                                    <>
+                                      <AlertTriangle className="h-3 w-3" />
+                                      Confirmar
+                                    </>
                                   ) : (
-                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <>
+                                      <Trash2 className="h-3 w-3" />
+                                      Excluir
+                                    </>
                                   )}
                                 </button>
-                              </>
-                            )}
-                            {col.id === "preparing" && (
-                              <>
-                                <button 
-                                  onClick={() => handleStatus(order.id, "delivering")}
-                                  disabled={updating === order.id}
-                                  className="flex-1 h-8 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold hover:bg-amber-200 active:bg-amber-300 transition-colors flex justify-center items-center gap-1"
-                                >
-                                  {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Enviar Moto 🛵"}
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteOrder(order.id, order.status)}
-                                  disabled={deletingOrder === order.id}
-                                  className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${
-                                    confirmDelete === order.id
-                                      ? "bg-red-500 text-white"
-                                      : "bg-red-50 text-red-600 hover:bg-red-100"
-                                  }`}
-                                  title="Excluir pedido"
-                                >
-                                  {deletingOrder === order.id ? (
-                                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                                  ) : confirmDelete === order.id ? (
-                                    <AlertTriangle className="h-3.5 w-3.5" />
-                                  ) : (
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  )}
-                                </button>
-                              </>
-                            )}
-                            {col.id === "delivering" && (
-                              <>
-                                <button 
-                                  onClick={() => handleStatus(order.id, "delivered")}
-                                  disabled={updating === order.id}
-                                  className="flex-1 h-8 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-bold hover:bg-emerald-200 active:bg-emerald-300 transition-colors flex justify-center items-center gap-1"
-                                >
-                                  {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Entregue ✅"}
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteOrder(order.id, order.status)}
-                                  disabled={deletingOrder === order.id}
-                                  className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${
-                                    confirmDelete === order.id
-                                      ? "bg-red-500 text-white"
-                                      : "bg-red-50 text-red-600 hover:bg-red-100"
-                                  }`}
-                                  title="Excluir pedido"
-                                >
-                                  {deletingOrder === order.id ? (
-                                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                                  ) : confirmDelete === order.id ? (
-                                    <AlertTriangle className="h-3.5 w-3.5" />
-                                  ) : (
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  )}
-                                </button>
-                              </>
-                            )}
-                            {col.id === "delivered" && allowDeleteDelivered && (
-                              <button
-                                onClick={() => handleDeleteOrder(order.id, order.status)}
-                                disabled={deletingOrder === order.id}
-                                className={`flex-1 h-8 rounded-lg flex items-center justify-center gap-1 text-xs font-bold transition-colors ${
-                                  confirmDelete === order.id
-                                    ? "bg-red-500 text-white"
-                                    : "bg-red-50 text-red-600 hover:bg-red-100"
-                                }`}
-                                title="Excluir pedido concluído"
-                              >
-                                {deletingOrder === order.id ? (
-                                  <RefreshCw className="h-3 w-3 animate-spin" />
-                                ) : confirmDelete === order.id ? (
-                                  <>
-                                    <AlertTriangle className="h-3 w-3" />
-                                    Confirmar
-                                  </>
-                                ) : (
-                                  <>
-                                    <Trash2 className="h-3 w-3" />
-                                    Excluir
-                                  </>
-                                )}
-                              </button>
-                            )}
-                            {(col.id === "pending" || col.id === "preparing") && (
-                              <a 
-                                href={`https://wa.me/55${order.phone.replace(/\D/g, '')}`} 
-                                target="_blank" 
-                                rel="noreferrer"
-                                className="h-8 w-8 rounded-lg bg-green-50 text-green-600 border border-green-200 flex items-center justify-center hover:bg-green-100 transition-colors"
-                                title="Chamar no WhatsApp"
-                              >
-                                <PhoneCall className="h-3.5 w-3.5" />
-                              </a>
-                            )}
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))
@@ -602,6 +629,16 @@ export default function Admin() {
           </div>
         )}
       </main>
+
+      {/* Modal de Pesagem */}
+      <WeighingModal
+        order={weighingOrder}
+        onClose={() => setWeighingOrder(null)}
+        onUpdate={() => {
+          // Força recarregar pedidos após pesagem
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }

@@ -24,24 +24,32 @@ export function useRealtimeOrders() {
 
     const setupOrders = async () => {
       const { data: authData } = await supabase.auth.getUser();
+      
+      console.log('🔍 [useRealtimeOrders] Auth data:', authData.user?.id);
+      
       if (!authData.user) {
+        console.log('❌ [useRealtimeOrders] No user authenticated');
         setLoading(false);
         return;
       }
 
       // Busca a loja do usuário logado via user_id
-      const { data: store } = await supabase
+      const { data: store, error: storeError } = await supabase
         .from("stores")
-        .select("id")
+        .select("id, name, slug")
         .eq("user_id", authData.user.id)
         .maybeSingle();
 
+      console.log('🏪 [useRealtimeOrders] Store query result:', { store, storeError });
+
       if (!store) {
-        // No store linked — return empty instead of leaking all orders
+        console.log('❌ [useRealtimeOrders] No store linked to user');
         setOrders([]);
         setLoading(false);
         return;
       }
+
+      console.log('✅ [useRealtimeOrders] Found store:', store.id, store.name);
 
       // Busca pedidos apenas dessa loja
       const { data, error } = await supabase
@@ -50,34 +58,60 @@ export function useRealtimeOrders() {
         .eq("store_id", store.id)
         .order("created_at", { ascending: false });
 
-      if (!error) setOrders((data as Order[]) ?? []);
+      console.log('📦 [useRealtimeOrders] Orders query result:', { 
+        count: data?.length || 0, 
+        error,
+        storeId: store.id 
+      });
+
+      if (!error) {
+        setOrders((data as Order[]) ?? []);
+        console.log('✅ [useRealtimeOrders] Orders loaded:', data?.length || 0);
+      } else {
+        console.error('❌ [useRealtimeOrders] Error loading orders:', error);
+      }
+      
       setLoading(false);
 
       // Realtime filtrado por loja
+      console.log('🔄 [useRealtimeOrders] Setting up realtime for store:', store.id);
       channel = supabase
         .channel("orders-realtime")
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "orders", filter: `store_id=eq.${store.id}` },
-          (payload) => { handleRealtimeEvent(payload); }
+          (payload) => { 
+            console.log('🔔 [useRealtimeOrders] Realtime event:', payload.eventType, payload);
+            handleRealtimeEvent(payload); 
+          }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('📡 [useRealtimeOrders] Realtime status:', status);
+        });
     };
 
     const handleRealtimeEvent = (payload: any) => {
       if (payload.eventType === "INSERT") {
+        console.log('➕ [useRealtimeOrders] New order inserted:', payload.new);
         setOrders((prev) => [payload.new as Order, ...prev]);
       } else if (payload.eventType === "UPDATE") {
+        console.log('🔄 [useRealtimeOrders] Order updated:', payload.new);
         setOrders((prev) =>
           prev.map((o) => o.id === (payload.new as Order).id ? (payload.new as Order) : o)
         );
       } else if (payload.eventType === "DELETE") {
+        console.log('🗑️ [useRealtimeOrders] Order deleted:', payload.old);
         setOrders((prev) => prev.filter((o) => o.id !== (payload.old as Order).id));
       }
     };
 
     setupOrders();
-    return () => { if (channel) supabase.removeChannel(channel); };
+    return () => { 
+      if (channel) {
+        console.log('🔌 [useRealtimeOrders] Unsubscribing from realtime');
+        supabase.removeChannel(channel); 
+      }
+    };
   }, []);
 
   return { orders, loading };
