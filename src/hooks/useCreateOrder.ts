@@ -43,13 +43,25 @@ export function useCreateOrder() {
       if (oErr) throw oErr;
 
       // 2. Cria os itens do pedido
-      const orderItems = input.products.map((p) => ({
-        order_id: order.id,
-        product_id: p.id,
-        quantity: p.quantity,
-        price: p.price,
-        product_name: p.name,
-      }));
+      const orderItems = input.products.map((p) => {
+        const item: any = {
+          order_id: order.id,
+          product_id: p.id,
+          quantity: p.quantity || 1,
+          price: p.price,
+        };
+        
+        // Adiciona campos específicos baseado no tipo de venda
+        if (p.sold_by === 'weight') {
+          item.weight_kg = p.weight_kg;
+          item.sold_by = 'weight';
+        } else {
+          item.sold_by = 'unit';
+          item.needs_weighing = true; // Itens por unidade precisam ser pesados
+        }
+        
+        return item;
+      });
 
       const { error: iErr } = await supabase.from("order_items").insert(orderItems);
 
