@@ -90,3 +90,12 @@ export async function updateOrderStatus(orderId: string, status: string) {
     .eq("id", orderId);
   if (error) throw error;
 }
+
+export async function deleteOrder(orderId: string) {
+  // order_items serão deletados automaticamente por CASCADE
+  const { error } = await supabase
+    .from("orders")
+    .delete()
+    .eq("id", orderId);
+  if (error) throw error;
+}
