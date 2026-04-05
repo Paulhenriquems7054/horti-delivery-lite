@@ -27,6 +27,34 @@ export default function AdminBasket() {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [showAllProducts, setShowAllProducts] = useState(false);
 
+  const { data: basket, isLoading } = useQuery({
+    queryKey: ["admin-active-basket"],
+    queryFn: async () => {
+      const { data: bData, error: bErr } = await supabase
+        .from("baskets")
+        .select("*")
+        .eq("active", true)
+        .limit(1)
+        .maybeSingle();
+
+      if (bErr) throw bErr;
+      if (!bData) return null;
+
+      const { data: items, error: iErr } = await supabase
+        .from("basket_items")
+        .select("id, quantity, products(id, name, price, unit, in_stock, image_url)")
+        .eq("basket_id", bData.id)
+        .order("id");
+
+      if (iErr) throw iErr;
+
+      return {
+        ...bData,
+        items: items || [],
+      };
+    },
+  });
+
   // Query para buscar TODOS os produtos da loja (não apenas os da cesta)
   const { data: allProducts } = useQuery({
     queryKey: ["all-products", basket?.id],
@@ -76,34 +104,6 @@ export default function AdminBasket() {
       queryClient.invalidateQueries({ queryKey: ["all-products"] });
     },
     onError: (err: any) => toast.error(err.message)
-  });
-
-  const { data: basket, isLoading } = useQuery({
-    queryKey: ["admin-active-basket"],
-    queryFn: async () => {
-      const { data: bData, error: bErr } = await supabase
-        .from("baskets")
-        .select("*")
-        .eq("active", true)
-        .limit(1)
-        .maybeSingle();
-
-      if (bErr) throw bErr;
-      if (!bData) return null;
-
-      const { data: items, error: iErr } = await supabase
-        .from("basket_items")
-        .select("id, quantity, products(id, name, price, unit, in_stock, image_url)")
-        .eq("basket_id", bData.id)
-        .order("id");
-
-      if (iErr) throw iErr;
-
-      return {
-        ...bData,
-        items: items || [],
-      };
-    },
   });
 
   const updateBasketMutation = useMutation({
