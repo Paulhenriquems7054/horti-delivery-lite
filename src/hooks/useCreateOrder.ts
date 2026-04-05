@@ -15,6 +15,7 @@ export interface CreateOrderInput {
   discount?: number;
   notes?: string;
   email?: string;
+  payment_method?: 'credit' | 'debit' | 'cash';
 }
 
 export function useCreateOrder() {
@@ -36,6 +37,7 @@ export function useCreateOrder() {
           discount: input.discount || 0,
           notes: input.notes,
           email: input.email,
+          payment_method: input.payment_method || 'cash',
         })
         .select()
         .single();

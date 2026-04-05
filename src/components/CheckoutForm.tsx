@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Loader2, ArrowLeft, User, Phone, MapPin, Truck, Ticket, X } from "lucide-react";
+import { Loader2, ArrowLeft, User, Phone, MapPin, Truck, Ticket, X, CreditCard, Banknote, Wallet } from "lucide-react";
 import { useDeliveryZones, type DeliveryZone } from "@/hooks/useDeliveryZones";
 import { useValidateCoupon } from "@/hooks/useCoupons";
 import { toast } from "sonner";
@@ -18,6 +18,7 @@ interface Props {
     coupon_id?: string;
     discount?: number;
     delivery_fee?: number;
+    payment_method: 'credit' | 'debit' | 'cash';
   }) => void;
   onBack: () => void;
 }
@@ -40,6 +41,7 @@ export function CheckoutForm({ loading, basketName, basketPrice, storeId, onSubm
   const [neighborhood, setNeighborhood] = useState("");
   const [reference, setReference] = useState("");
   const [selectedZone, setSelectedZone] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<'credit' | 'debit' | 'cash'>('cash');
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [touched, setTouched] = useState({
@@ -142,6 +144,7 @@ export function CheckoutForm({ loading, basketName, basketPrice, storeId, onSubm
       coupon_id: appliedCoupon?.id,
       discount,
       delivery_fee: deliveryFee,
+      payment_method: paymentMethod,
     });
   };
 
@@ -282,6 +285,54 @@ export function CheckoutForm({ loading, basketName, basketPrice, storeId, onSubm
             </select>
           </div>
         )}
+
+        {/* Forma de Pagamento */}
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-foreground flex items-center gap-1.5">
+            <Wallet className="h-4 w-4 text-primary" /> Forma de Pagamento
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('credit')}
+              className={`h-20 rounded-xl border-2 flex flex-col items-center justify-center gap-1.5 transition-all ${
+                paymentMethod === 'credit' 
+                  ? 'border-primary bg-primary/5 text-primary' 
+                  : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+              }`}
+            >
+              <CreditCard className="h-6 w-6" />
+              <span className="text-xs font-bold">Crédito</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('debit')}
+              className={`h-20 rounded-xl border-2 flex flex-col items-center justify-center gap-1.5 transition-all ${
+                paymentMethod === 'debit' 
+                  ? 'border-primary bg-primary/5 text-primary' 
+                  : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+              }`}
+            >
+              <CreditCard className="h-6 w-6" />
+              <span className="text-xs font-bold">Débito</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('cash')}
+              className={`h-20 rounded-xl border-2 flex flex-col items-center justify-center gap-1.5 transition-all ${
+                paymentMethod === 'cash' 
+                  ? 'border-primary bg-primary/5 text-primary' 
+                  : 'border-border bg-card text-muted-foreground hover:border-primary/50'
+              }`}
+            >
+              <Banknote className="h-6 w-6" />
+              <span className="text-xs font-bold">Dinheiro</span>
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground text-center">
+            💳 Pagamento na entrega
+          </p>
+        </div>
 
         {/* Campos de Endereço */}
         <div className="space-y-1">

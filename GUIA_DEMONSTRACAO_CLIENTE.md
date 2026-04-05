@@ -9,15 +9,15 @@ O sistema Horti Delivery Lite está completo e funcional para demonstração ao 
 ## 🌐 URLs de Acesso
 
 ### Produção (Vercel)
-- **Landing Page**: https://horti-delivery-lite.vercel.app
-- **Loja do Cliente**: https://horti-delivery-lite.vercel.app/basket (substitua "basket" pelo slug da loja)
-- **Login Admin**: https://horti-delivery-lite.vercel.app/login
-- **Painel Admin**: https://horti-delivery-lite.vercel.app/admin
+- **Landing Page**: https://horti-delivery.vercel.app
+- **Loja do Cliente**: https://horti-delivery.vercel.app/basket (substitua "basket" pelo slug da loja)
+- **Login Admin**: https://horti-delivery.vercel.app/login
+- **Painel Admin**: https://horti-delivery.vercel.app/admin
 
 ### Exemplo com Loja de Teste
 Se você tem uma loja com slug "supermercado-teste":
-- Cliente: https://horti-delivery-lite.vercel.app/supermercado-teste
-- Admin: https://horti-delivery-lite.vercel.app/admin (após login)
+- Cliente: https://horti-delivery.vercel.app/supermercado-teste
+- Admin: https://horti-delivery.vercel.app/admin (após login)
 
 ---
 

@@ -537,6 +537,7 @@ export default function Index() {
                     coupon_id: data.coupon_id,
                     delivery_fee: data.delivery_fee,
                     discount: data.discount,
+                    payment_method: data.payment_method,
                   },
                   {
                     onSuccess: (order) => {
