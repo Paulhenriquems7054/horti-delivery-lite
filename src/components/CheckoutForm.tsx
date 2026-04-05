@@ -220,7 +220,7 @@ export function CheckoutForm({ loading, basketName, basketPrice, storeId, onSubm
                 placeholder="Digite o código"
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                className="flex-1 h-12 rounded-xl border border-border px-4 text-base font-semibold bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="flex-1 h-12 rounded-xl border border-border px-4 text-base font-semibold bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
               <button
                 type="button"
@@ -245,7 +245,7 @@ export function CheckoutForm({ loading, basketName, basketPrice, storeId, onSubm
             value={name}
             onChange={(e) => setName(e.target.value)}
             onBlur={() => setTouched((t) => ({ ...t, name: true }))}
-            className={`w-full h-12 rounded-xl border px-4 text-base font-semibold bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all ${touched.name && errors.name ? "border-destructive ring-1 ring-destructive/30" : "border-border"}`}
+            className={`w-full h-12 rounded-xl border px-4 text-base font-semibold bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all ${touched.name && errors.name ? "border-destructive ring-1 ring-destructive/30" : "border-border"}`}
           />
         </div>
 
@@ -260,7 +260,7 @@ export function CheckoutForm({ loading, basketName, basketPrice, storeId, onSubm
             value={phone}
             onChange={(e) => setPhone(formatPhone(e.target.value))}
             onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
-            className={`w-full h-12 rounded-xl border px-4 text-base font-semibold bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all ${touched.phone && errors.phone ? "border-destructive ring-1 ring-destructive/30" : "border-border"}`}
+            className={`w-full h-12 rounded-xl border px-4 text-base font-semibold bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all ${touched.phone && errors.phone ? "border-destructive ring-1 ring-destructive/30" : "border-border"}`}
           />
         </div>
 
@@ -274,7 +274,7 @@ export function CheckoutForm({ loading, basketName, basketPrice, storeId, onSubm
               value={selectedZone}
               onChange={(e) => setSelectedZone(e.target.value)}
               onBlur={() => setTouched((t) => ({ ...t, zone: true }))}
-              className={`w-full h-12 rounded-xl border px-4 text-base font-semibold bg-white text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all ${touched.zone && errors.zone ? "border-destructive ring-1 ring-destructive/30" : "border-border"}`}
+              className={`w-full h-12 rounded-xl border px-4 text-base font-semibold bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all ${touched.zone && errors.zone ? "border-destructive ring-1 ring-destructive/30" : "border-border"}`}
             >
               <option value="" disabled>Selecione seu bairro...</option>
               {zones.map(z => (
@@ -347,7 +347,7 @@ export function CheckoutForm({ loading, basketName, basketPrice, storeId, onSubm
               value={street}
               onChange={(e) => setStreet(e.target.value)}
               onBlur={() => setTouched((t) => ({ ...t, street: true }))}
-              className={`w-full h-12 rounded-xl border px-4 text-base font-semibold bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all ${touched.street && errors.street ? "border-destructive ring-1 ring-destructive/30" : "border-border"}`}
+              className={`w-full h-12 rounded-xl border px-4 text-base font-semibold bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all ${touched.street && errors.street ? "border-destructive ring-1 ring-destructive/30" : "border-border"}`}
             />
             {/* Número + Bairro */}
             <div className="grid grid-cols-2 gap-2">
@@ -357,7 +357,7 @@ export function CheckoutForm({ loading, basketName, basketPrice, storeId, onSubm
                 value={number}
                 onChange={(e) => setNumber(e.target.value)}
                 onBlur={() => setTouched((t) => ({ ...t, number: true }))}
-                className={`h-12 rounded-xl border px-4 text-base font-semibold bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all ${touched.number && errors.number ? "border-destructive ring-1 ring-destructive/30" : "border-border"}`}
+                className={`h-12 rounded-xl border px-4 text-base font-semibold bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all ${touched.number && errors.number ? "border-destructive ring-1 ring-destructive/30" : "border-border"}`}
               />
               <input
                 type="text"
@@ -365,7 +365,7 @@ export function CheckoutForm({ loading, basketName, basketPrice, storeId, onSubm
                 value={neighborhood}
                 onChange={(e) => setNeighborhood(e.target.value)}
                 onBlur={() => setTouched((t) => ({ ...t, neighborhood: true }))}
-                className={`h-12 rounded-xl border px-4 text-base font-semibold bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all ${touched.neighborhood && errors.neighborhood ? "border-destructive ring-1 ring-destructive/30" : "border-border"}`}
+                className={`h-12 rounded-xl border px-4 text-base font-semibold bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all ${touched.neighborhood && errors.neighborhood ? "border-destructive ring-1 ring-destructive/30" : "border-border"}`}
               />
             </div>
             {/* Ponto de Referência */}
@@ -374,7 +374,7 @@ export function CheckoutForm({ loading, basketName, basketPrice, storeId, onSubm
               placeholder="Ponto de referência (opcional) — Ex: Próximo ao mercado"
               value={reference}
               onChange={(e) => setReference(e.target.value)}
-              className="w-full h-12 rounded-xl border border-border px-4 text-base font-semibold bg-white text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+              className="w-full h-12 rounded-xl border border-border px-4 text-base font-semibold bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
             />
           </div>
         </div>

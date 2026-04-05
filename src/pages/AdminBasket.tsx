@@ -411,10 +411,10 @@ export default function AdminBasket() {
             </button>
           </div>
           <div className="space-y-2">
-            {zones?.length === 0 && <p className="text-xs text-muted-foreground text-center bg-slate-50 p-3 rounded-lg border border-slate-100">Nenhum bairro cadastrado. Seus clientes enviarão pedidos sem taxa de frete no momento.</p>}
+            {zones?.length === 0 && <p className="text-xs text-muted-foreground text-center bg-muted p-3 rounded-lg border border-border">Nenhum bairro cadastrado. Seus clientes enviarão pedidos sem taxa de frete no momento.</p>}
             {zones?.map(z => (
-              <div key={z.id} className="flex items-center justify-between p-2.5 px-3 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="font-bold text-sm text-slate-700">{z.neighborhood}</span>
+              <div key={z.id} className="flex items-center justify-between p-2.5 px-3 rounded-xl bg-muted border border-border">
+                <span className="font-bold text-sm text-foreground">{z.neighborhood}</span>
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-primary font-bold">R$ {z.fee.toFixed(2).replace(".", ",")}</span>
                   <button onClick={() => deleteZone.mutate(z.id)} className="text-red-400 p-1 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors"><Trash2 className="h-4 w-4" /></button>
@@ -601,7 +601,7 @@ export default function AdminBasket() {
                           />
                         </div>
                         <div className="col-span-2 sm:col-span-3 flex items-center gap-2">
-                          <div className="h-9 w-9 shrink-0 bg-slate-50 border border-border rounded-lg flex items-center justify-center overflow-hidden">
+                          <div className="h-9 w-9 shrink-0 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden">
                             {editingItem.image_url ? (
                               <img src={editingItem.image_url} alt="" className="w-full h-full object-cover" />
                             ) : (
