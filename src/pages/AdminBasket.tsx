@@ -25,6 +25,7 @@ export default function AdminBasket() {
   const { addZone, deleteZone } = useManageDeliveryZone();
 
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
   const [showAllProducts, setShowAllProducts] = useState(false);
 
   const { data: basket, isLoading } = useQuery({
@@ -279,6 +280,40 @@ export default function AdminBasket() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] })
   });
 
+  const editProductMutation = useMutation({
+    mutationFn: async (data: { productId: string; name: string; price: number; unit: string; image_url: string }) => {
+      const { error } = await supabase
+        .from("products")
+        .update({ name: data.name, price: data.price, unit: data.unit, image_url: data.image_url })
+        .eq("id", data.productId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Produto atualizado!");
+      setEditingProduct(null);
+      queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] });
+      queryClient.invalidateQueries({ queryKey: ["all-products"] });
+    },
+    onError: (err: any) => toast.error("Erro ao salvar: " + err.message)
+  });
+
+  const deleteProductMutation = useMutation({
+    mutationFn: async (productId: string) => {
+      // Primeiro remove da cesta se estiver lá
+      await supabase.from("basket_items").delete().match({ product_id: productId });
+      
+      // Depois deleta o produto
+      const { error } = await supabase.from("products").delete().eq("id", productId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Produto excluído!");
+      queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] });
+      queryClient.invalidateQueries({ queryKey: ["all-products"] });
+    },
+    onError: (err: any) => toast.error("Erro ao excluir: " + err.message)
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center">
@@ -328,7 +363,7 @@ export default function AdminBasket() {
                 type="text" 
                 defaultValue={basket.name}
                 onChange={(e) => setBasketName(e.target.value)}
-                className="w-full mt-1 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50" 
+                className="w-full mt-1 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 bg-card text-foreground" 
               />
             </div>
             <div>
@@ -337,7 +372,7 @@ export default function AdminBasket() {
                 type="number" 
                 defaultValue={basket.price}
                 onChange={(e) => setBasketPrice(e.target.value)}
-                className="w-full mt-1 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50" 
+                className="w-full mt-1 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 bg-card text-foreground" 
               />
             </div>
             <button 
@@ -357,8 +392,8 @@ export default function AdminBasket() {
             <Truck className="h-4 w-4 text-primary" /> Taxas de Entrega / Bairros
           </h2>
           <div className="flex gap-2 mb-4">
-            <input type="text" placeholder="Bairro (ex: Centro)" value={newZoneName} onChange={e => setNewZoneName(e.target.value)} className="w-full h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" />
-            <input type="number" placeholder="Taxa R$ (ex: 5.00)" value={newZoneFee} onChange={e => setNewZoneFee(e.target.value)} className="w-[100px] sm:w-[120px] shrink-0 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" />
+            <input type="text" placeholder="Bairro (ex: Centro)" value={newZoneName} onChange={e => setNewZoneName(e.target.value)} className="w-full h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm bg-card text-foreground" />
+            <input type="number" placeholder="Taxa R$ (ex: 5.00)" value={newZoneFee} onChange={e => setNewZoneFee(e.target.value)} className="w-[100px] sm:w-[120px] shrink-0 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm bg-card text-foreground" />
             <button 
               onClick={() => {
                 if(newZoneName.trim() && !isNaN(parseFloat(newZoneFee))) {
@@ -401,7 +436,7 @@ export default function AdminBasket() {
                 type="text" 
                 value={newProductName}
                 onChange={(e) => setNewProductName(e.target.value)}
-                className="w-full mt-1 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50" 
+                className="w-full mt-1 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 bg-card text-foreground" 
               />
             </div>
             <div>
@@ -409,7 +444,7 @@ export default function AdminBasket() {
               <select 
                 value={newProductUnit}
                 onChange={(e) => setNewProductUnit(e.target.value)}
-                className="w-full mt-1 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 bg-card" 
+                className="w-full mt-1 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 bg-card text-foreground" 
               >
                 <option value="un">Unidade(s)</option>
                 <option value="kg">Quilo(s)</option>
@@ -422,7 +457,7 @@ export default function AdminBasket() {
                 value={newProductPrice}
                 onChange={(e) => setNewProductPrice(e.target.value)}
                 placeholder="4.50"
-                className="w-full mt-1 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50" 
+                className="w-full mt-1 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 bg-card text-foreground" 
               />
             </div>
             <div className="sm:col-span-4">
@@ -432,7 +467,7 @@ export default function AdminBasket() {
                 value={newProductImageUrl}
                 onChange={(e) => setNewProductImageUrl(e.target.value)}
                 placeholder="https://exemplo.com/foto.jpg"
-                className="w-full mt-1 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50" 
+                className="w-full mt-1 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 bg-card text-foreground" 
               />
             </div>
           </div>
@@ -541,7 +576,7 @@ export default function AdminBasket() {
                             type="text" 
                             value={editingItem.name} 
                             onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
-                            className="w-full h-9 px-3 border border-border rounded-lg text-sm"
+                            className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-card text-foreground"
                           />
                         </div>
                         <div>
@@ -549,7 +584,7 @@ export default function AdminBasket() {
                           <select 
                             value={editingItem.unit} 
                             onChange={(e) => setEditingItem({ ...editingItem, unit: e.target.value })}
-                            className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-card"
+                            className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-card text-foreground"
                           >
                             <option value="un">UN</option>
                             <option value="kg">KG</option>
@@ -562,7 +597,7 @@ export default function AdminBasket() {
                             step="0.01"
                             value={editingItem.price} 
                             onChange={(e) => setEditingItem({ ...editingItem, price: parseFloat(e.target.value) || 0 })}
-                            className="w-full h-9 px-3 border border-border rounded-lg text-sm"
+                            className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-card text-foreground"
                           />
                         </div>
                         <div className="col-span-2 sm:col-span-3 flex items-center gap-2">
@@ -579,7 +614,7 @@ export default function AdminBasket() {
                               type="text" 
                               value={editingItem.image_url || ""} 
                               onChange={(e) => setEditingItem({ ...editingItem, image_url: e.target.value })}
-                              className="w-full h-9 px-3 border border-border rounded-lg text-sm"
+                              className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-card text-foreground"
                               placeholder="https://..."
                             />
                           </div>
@@ -718,11 +753,11 @@ export default function AdminBasket() {
                   {/* Produtos JÁ na cesta */}
                   {basket.items.length > 0 && (
                     <div className="mb-4">
-                      <p className="text-xs font-bold text-emerald-600 mb-2">✓ Na Cesta ({basket.items.length})</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mb-2">✓ Na Cesta ({basket.items.length})</p>
+                      <div className="space-y-2">
                         {basket.items.map((item: any) => (
                           <div key={item.id} className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-2 flex items-center gap-2">
-                            <div className="h-8 w-8 shrink-0 bg-white dark:bg-card rounded-lg flex items-center justify-center overflow-hidden">
+                            <div className="h-8 w-8 shrink-0 bg-card rounded-lg flex items-center justify-center overflow-hidden">
                               {item.products.image_url ? (
                                 <img src={item.products.image_url} alt="" className="w-full h-full object-cover" />
                               ) : (
@@ -731,9 +766,38 @@ export default function AdminBasket() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="font-bold text-xs text-foreground truncate">{item.products.name}</p>
-                              <p className="text-[10px] text-muted-foreground">R$ {item.products.price?.toFixed(2)}</p>
+                              <p className="text-[10px] text-muted-foreground">R$ {item.products.price?.toFixed(2)} / {item.products.unit}</p>
                             </div>
-                            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                onClick={() => setEditingItem({ 
+                                  id: item.id, 
+                                  name: item.products.name, 
+                                  quantity: item.quantity, 
+                                  price: item.products.price,
+                                  unit: item.products.unit || "un",
+                                  image_url: item.products.image_url
+                                })}
+                                className="h-7 w-7 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 rounded-lg flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-950/50 transition-colors border border-blue-200 dark:border-blue-800"
+                                title="Editar produto"
+                              >
+                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (window.confirm(`Remover ${item.products.name} da cesta?`)) {
+                                    removeItemMutation.mutate(item.id);
+                                  }
+                                }}
+                                disabled={removeItemMutation.isPending}
+                                className="h-7 w-7 bg-red-50 dark:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors border border-red-200 dark:border-red-800"
+                                title="Remover da cesta"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -746,36 +810,148 @@ export default function AdminBasket() {
                       <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-2">
                         ⚠ Fora da Cesta ({productsNotInBasket.length})
                       </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {productsNotInBasket.map((product: any) => (
-                          <div key={product.id} className="bg-card border border-border rounded-lg p-2 flex items-center gap-2">
-                            <div className="h-8 w-8 shrink-0 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
-                              {product.image_url ? (
-                                <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+                      <div className="space-y-2">
+                        {productsNotInBasket.map((product: any) => {
+                          const isEditingThisProduct = editingProduct?.id === product.id;
+                          
+                          return (
+                            <div key={product.id} className={`bg-card border border-border rounded-lg p-2 transition-all ${isEditingThisProduct ? 'ring-2 ring-primary/30 border-primary/50' : ''}`}>
+                              {isEditingThisProduct ? (
+                                <div className="space-y-3">
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                    <div className="col-span-2 sm:col-span-3">
+                                      <label className="text-xs font-bold text-muted-foreground">Nome</label>
+                                      <input 
+                                        type="text" 
+                                        value={editingProduct.name} 
+                                        onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                                        className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-card text-foreground"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="text-xs font-bold text-muted-foreground">Medida</label>
+                                      <select 
+                                        value={editingProduct.unit} 
+                                        onChange={(e) => setEditingProduct({ ...editingProduct, unit: e.target.value })}
+                                        className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-card text-foreground"
+                                      >
+                                        <option value="un">UN</option>
+                                        <option value="kg">KG</option>
+                                      </select>
+                                    </div>
+                                    <div className="col-span-1 sm:col-span-2">
+                                      <label className="text-xs font-bold text-muted-foreground">Preço (R$)</label>
+                                      <input 
+                                        type="number" 
+                                        step="0.01"
+                                        value={editingProduct.price} 
+                                        onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
+                                        className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-card text-foreground"
+                                      />
+                                    </div>
+                                    <div className="col-span-2 sm:col-span-3 flex items-center gap-2">
+                                      <div className="h-9 w-9 shrink-0 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden">
+                                        {editingProduct.image_url ? (
+                                          <img src={editingProduct.image_url} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                          <span className="text-xs">🖼️</span>
+                                        )}
+                                      </div>
+                                      <div className="flex-1">
+                                        <label className="text-xs font-bold text-muted-foreground">Link da Foto (Internet)</label>
+                                        <input 
+                                          type="text" 
+                                          value={editingProduct.image_url || ""} 
+                                          onChange={(e) => setEditingProduct({ ...editingProduct, image_url: e.target.value })}
+                                          className="w-full h-9 px-3 border border-border rounded-lg text-sm bg-card text-foreground"
+                                          placeholder="https://..."
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button 
+                                      onClick={() => setEditingProduct(null)}
+                                      className="flex-1 h-9 rounded-lg border border-border text-sm font-bold text-muted-foreground hover:bg-muted"
+                                    >
+                                      Cancelar
+                                    </button>
+                                    <button 
+                                      onClick={() => editProductMutation.mutate({
+                                        productId: product.id,
+                                        name: editingProduct.name,
+                                        price: editingProduct.price,
+                                        unit: editingProduct.unit,
+                                        image_url: editingProduct.image_url
+                                      })}
+                                      disabled={editProductMutation.isPending}
+                                      className="flex-1 h-9 rounded-lg bg-primary text-white text-sm font-bold flex items-center justify-center gap-1 hover:bg-primary/90"
+                                    >
+                                      {editProductMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+                                    </button>
+                                  </div>
+                                </div>
                               ) : (
-                                <span className="text-sm">🥬</span>
+                                <div className="flex items-center gap-2">
+                                  <div className="h-8 w-8 shrink-0 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                                    {product.image_url ? (
+                                      <img src={product.image_url} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                      <span className="text-sm">🥬</span>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-xs text-foreground truncate">{product.name}</p>
+                                    <p className="text-[10px] text-muted-foreground">
+                                      R$ {product.price?.toFixed(2)} / {product.unit}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <button
+                                      onClick={() => addToBasketMutation.mutate(product.id)}
+                                      disabled={addToBasketMutation.isPending}
+                                      className="h-7 w-7 bg-primary text-white rounded-lg flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
+                                      title="Adicionar à cesta"
+                                    >
+                                      {addToBasketMutation.isPending ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                      ) : (
+                                        <Plus className="h-3 w-3" />
+                                      )}
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingProduct({ 
+                                        id: product.id, 
+                                        name: product.name, 
+                                        price: product.price,
+                                        unit: product.unit || "un",
+                                        image_url: product.image_url
+                                      })}
+                                      className="h-7 w-7 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 rounded-lg flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-950/50 transition-colors border border-blue-200 dark:border-blue-800"
+                                      title="Editar produto"
+                                    >
+                                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        if (window.confirm(`Excluir ${product.name} permanentemente?`)) {
+                                          deleteProductMutation.mutate(product.id);
+                                        }
+                                      }}
+                                      disabled={deleteProductMutation.isPending}
+                                      className="h-7 w-7 bg-red-50 dark:bg-red-950/30 text-red-500 dark:text-red-400 rounded-lg flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors border border-red-200 dark:border-red-800"
+                                      title="Excluir produto"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                </div>
                               )}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-xs text-foreground truncate">{product.name}</p>
-                              <p className="text-[10px] text-muted-foreground">
-                                R$ {product.price?.toFixed(2)} / {product.unit}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => addToBasketMutation.mutate(product.id)}
-                              disabled={addToBasketMutation.isPending}
-                              className="h-7 w-7 shrink-0 bg-primary text-white rounded-lg flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
-                              title="Adicionar à cesta"
-                            >
-                              {addToBasketMutation.isPending ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <Plus className="h-3 w-3" />
-                              )}
-                            </button>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
