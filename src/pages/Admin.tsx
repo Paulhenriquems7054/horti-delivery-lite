@@ -454,18 +454,18 @@ export default function Admin() {
                       columnOrders.map(order => (
                         <div key={order.id} className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-3 hover:shadow-md transition-shadow">
                           {/* Nome e ID */}
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <p className="font-extrabold text-sm text-slate-800 leading-tight">{order.customer_name}</p>
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-extrabold text-sm text-slate-800 leading-tight truncate">{order.customer_name}</p>
                               <p className="text-[10px] text-slate-400 font-mono mt-0.5">#{order.id.split('-')[0]}</p>
                             </div>
-                            <p className="font-black text-primary text-sm whitespace-nowrap">R$ {order.total?.toFixed(2)}</p>
+                            <p className="font-black text-primary text-sm whitespace-nowrap shrink-0">R$ {order.total?.toFixed(2)}</p>
                           </div>
                           
                           {/* Endereço Breve */}
                           <div className="flex items-start gap-1.5 text-xs text-slate-500 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
                             <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                            <span className="line-clamp-2 leading-tight">{order.address}</span>
+                            <span className="line-clamp-2 leading-tight break-words">{order.address}</span>
                           </div>
 
                           {/* Botões de Ação do Kanban */}
@@ -477,13 +477,13 @@ export default function Admin() {
                                   <button 
                                     onClick={() => handleStatus(order.id, "preparing")}
                                     disabled={updating === order.id}
-                                    className="flex-1 h-8 rounded-lg bg-blue-100 text-blue-700 text-xs font-bold hover:bg-blue-200 active:bg-blue-300 transition-colors flex justify-center items-center gap-1"
+                                    className="flex-1 h-8 rounded-lg bg-blue-100 text-blue-700 text-xs font-bold hover:bg-blue-200 active:bg-blue-300 transition-colors flex justify-center items-center gap-1 min-w-0"
                                   >
-                                    {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Preparar 🍳"}
+                                    {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : <span className="truncate">Preparar 🍳</span>}
                                   </button>
                                   <button
                                     onClick={() => setWeighingOrder(order)}
-                                    className="h-8 w-8 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors flex items-center justify-center"
+                                    className="h-8 w-8 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors flex items-center justify-center shrink-0"
                                     title="Pesar itens"
                                   >
                                     <Scale className="h-3.5 w-3.5" />
@@ -491,7 +491,7 @@ export default function Admin() {
                                   <button
                                     onClick={() => handleDeleteOrder(order.id, order.status)}
                                     disabled={deletingOrder === order.id}
-                                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${
+                                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
                                       confirmDelete === order.id
                                         ? "bg-red-500 text-white"
                                         : "bg-red-50 text-red-600 hover:bg-red-100"
@@ -510,7 +510,7 @@ export default function Admin() {
                                     href={`https://wa.me/55${order.phone.replace(/\D/g, '')}`} 
                                     target="_blank" 
                                     rel="noreferrer"
-                                    className="h-8 w-8 rounded-lg bg-green-50 text-green-600 border border-green-200 flex items-center justify-center hover:bg-green-100 transition-colors"
+                                    className="h-8 w-8 rounded-lg bg-green-50 text-green-600 border border-green-200 flex items-center justify-center hover:bg-green-100 transition-colors shrink-0"
                                     title="Chamar no WhatsApp"
                                   >
                                     <PhoneCall className="h-3.5 w-3.5" />
@@ -522,13 +522,13 @@ export default function Admin() {
                                   <button 
                                     onClick={() => handleStatus(order.id, "delivering")}
                                     disabled={updating === order.id}
-                                    className="flex-1 h-8 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold hover:bg-amber-200 active:bg-amber-300 transition-colors flex justify-center items-center gap-1"
+                                    className="flex-1 h-8 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold hover:bg-amber-200 active:bg-amber-300 transition-colors flex justify-center items-center gap-1 min-w-0"
                                   >
-                                    {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Enviar Moto 🛵"}
+                                    {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : <span className="truncate">Enviar 🛵</span>}
                                   </button>
                                   <button
                                     onClick={() => setWeighingOrder(order)}
-                                    className="h-8 w-8 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors flex items-center justify-center"
+                                    className="h-8 w-8 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors flex items-center justify-center shrink-0"
                                     title="Pesar itens"
                                   >
                                     <Scale className="h-3.5 w-3.5" />
@@ -536,7 +536,7 @@ export default function Admin() {
                                   <button
                                     onClick={() => handleDeleteOrder(order.id, order.status)}
                                     disabled={deletingOrder === order.id}
-                                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${
+                                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
                                       confirmDelete === order.id
                                         ? "bg-red-500 text-white"
                                         : "bg-red-50 text-red-600 hover:bg-red-100"
@@ -555,7 +555,7 @@ export default function Admin() {
                                     href={`https://wa.me/55${order.phone.replace(/\D/g, '')}`} 
                                     target="_blank" 
                                     rel="noreferrer"
-                                    className="h-8 w-8 rounded-lg bg-green-50 text-green-600 border border-green-200 flex items-center justify-center hover:bg-green-100 transition-colors"
+                                    className="h-8 w-8 rounded-lg bg-green-50 text-green-600 border border-green-200 flex items-center justify-center hover:bg-green-100 transition-colors shrink-0"
                                     title="Chamar no WhatsApp"
                                   >
                                     <PhoneCall className="h-3.5 w-3.5" />
@@ -567,14 +567,14 @@ export default function Admin() {
                                   <button 
                                     onClick={() => handleStatus(order.id, "delivered")}
                                     disabled={updating === order.id}
-                                    className="flex-1 h-8 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-bold hover:bg-emerald-200 active:bg-emerald-300 transition-colors flex justify-center items-center gap-1"
+                                    className="flex-1 h-8 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-bold hover:bg-emerald-200 active:bg-emerald-300 transition-colors flex justify-center items-center gap-1 min-w-0"
                                   >
-                                    {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : "Entregue ✅"}
+                                    {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : <span className="truncate">Entregue ✅</span>}
                                   </button>
                                   <button
                                     onClick={() => handleDeleteOrder(order.id, order.status)}
                                     disabled={deletingOrder === order.id}
-                                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${
+                                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
                                       confirmDelete === order.id
                                         ? "bg-red-500 text-white"
                                         : "bg-red-50 text-red-600 hover:bg-red-100"
@@ -595,7 +595,7 @@ export default function Admin() {
                                 <button
                                   onClick={() => handleDeleteOrder(order.id, order.status)}
                                   disabled={deletingOrder === order.id}
-                                  className={`flex-1 h-8 rounded-lg flex items-center justify-center gap-1 text-xs font-bold transition-colors ${
+                                  className={`flex-1 h-8 rounded-lg flex items-center justify-center gap-1 text-xs font-bold transition-colors min-w-0 ${
                                     confirmDelete === order.id
                                       ? "bg-red-500 text-white"
                                       : "bg-red-50 text-red-600 hover:bg-red-100"
@@ -606,13 +606,13 @@ export default function Admin() {
                                     <RefreshCw className="h-3 w-3 animate-spin" />
                                   ) : confirmDelete === order.id ? (
                                     <>
-                                      <AlertTriangle className="h-3 w-3" />
-                                      Confirmar
+                                      <AlertTriangle className="h-3 w-3 shrink-0" />
+                                      <span className="truncate">Confirmar</span>
                                     </>
                                   ) : (
                                     <>
-                                      <Trash2 className="h-3 w-3" />
-                                      Excluir
+                                      <Trash2 className="h-3 w-3 shrink-0" />
+                                      <span className="truncate">Excluir</span>
                                     </>
                                   )}
                                 </button>
