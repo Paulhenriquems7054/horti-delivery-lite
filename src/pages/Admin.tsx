@@ -433,22 +433,22 @@ export default function Admin() {
           <div className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-muted-foreground/20 sm:grid sm:grid-cols-4 sm:overflow-visible sm:snap-none">
             
             {[
-              { id: "pending", title: "Novos Pedidos", icon: "🔔", bg: "bg-slate-100", border: "border-slate-200" },
-              { id: "preparing", title: "Separando", icon: "🍳", bg: "bg-blue-50", border: "border-blue-100" },
-              { id: "delivering", title: "Na Rota", icon: "🛵", bg: "bg-amber-50", border: "border-amber-100" },
-              { id: "delivered", title: "Concluído", icon: "✅", bg: "bg-emerald-50", border: "border-emerald-100" },
+              { id: "pending", title: "Novos Pedidos", icon: "🔔", bg: "bg-slate-100 dark:bg-slate-800", border: "border-slate-200 dark:border-slate-700" },
+              { id: "preparing", title: "Separando", icon: "🍳", bg: "bg-blue-50 dark:bg-blue-950/30", border: "border-blue-100 dark:border-blue-900" },
+              { id: "delivering", title: "Na Rota", icon: "🛵", bg: "bg-amber-50 dark:bg-amber-950/30", border: "border-amber-100 dark:border-amber-900" },
+              { id: "delivered", title: "Concluído", icon: "✅", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-100 dark:border-emerald-900" },
             ].map((col) => {
               const columnOrders = orders.filter(o => o.status === col.id);
               
               return (
                 <div key={col.id} className={`flex-shrink-0 w-[85vw] sm:w-auto snap-center rounded-2xl ${col.bg} border ${col.border} flex flex-col max-h-[70vh] shadow-sm`}>
                   {/* Cabeçalho da Coluna Kanban */}
-                  <div className="p-3 border-b border-black/5 bg-black/5 flex items-center justify-between sticky top-0 rounded-t-2xl">
+                  <div className="p-3 border-b border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 flex items-center justify-between sticky top-0 rounded-t-2xl">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{col.icon}</span>
-                      <h3 className="font-extrabold text-slate-800 text-sm">{col.title}</h3>
+                      <h3 className="font-extrabold text-foreground text-sm">{col.title}</h3>
                     </div>
-                    <span className="bg-white/60 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full">
+                    <span className="bg-white/60 dark:bg-black/40 text-slate-600 dark:text-slate-300 text-xs font-bold px-2 py-0.5 rounded-full">
                       {columnOrders.length}
                     </span>
                   </div>
@@ -456,7 +456,7 @@ export default function Admin() {
                   {/* Lista de Cards */}
                   <div className="p-3 space-y-3 overflow-y-auto flex-1 scrollbar-hide">
                     {columnOrders.length === 0 ? (
-                      <div className="py-6 text-center text-slate-400 text-xs font-semibold">
+                      <div className="py-6 text-center text-muted-foreground text-xs font-semibold">
                         Vazio
                       </div>
                     ) : (
