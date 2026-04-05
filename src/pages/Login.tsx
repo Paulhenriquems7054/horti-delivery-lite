@@ -179,7 +179,7 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background dark:bg-slate-900 p-4 relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
             {/* Theme Toggle - Canto superior direito */}
             <div className="absolute top-6 right-6 z-20">
                 <ThemeToggle />
@@ -197,23 +197,23 @@ export default function Login() {
                           className="w-full h-full object-contain"
                         />
                     </div>
-                    <h1 className="text-3xl font-black text-slate-800">Área do Empreendedor</h1>
-                    <p className="text-slate-500 font-medium tracking-tight">Cofre seguro HortiDelivery</p>
+                    <h1 className="text-3xl font-black text-foreground">Área do Empreendedor</h1>
+                    <p className="text-muted-foreground font-medium tracking-tight">Cofre seguro HortiDelivery</p>
                 </div>
 
-                <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-xl shadow-emerald-900/5">
+                <div className="bg-card dark:bg-card p-6 sm:p-8 rounded-3xl border border-border shadow-xl">
                     
                     {/* Tabs Navbar */}
-                    <div className="flex bg-slate-100 rounded-xl p-1 mb-6">
+                    <div className="flex bg-muted dark:bg-muted rounded-xl p-1 mb-6">
                         <button 
                             onClick={() => setMode("login")} 
-                            className={`flex-1 text-sm font-bold py-2 rounded-lg transition-all ${mode === "login" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500"}`}
+                            className={`flex-1 text-sm font-bold py-2 rounded-lg transition-all ${mode === "login" ? "bg-card text-emerald-700 dark:text-emerald-400 shadow-sm" : "text-muted-foreground"}`}
                         >
                             Entrar
                         </button>
                         <button 
                             onClick={() => setMode("register")} 
-                            className={`flex-1 text-sm font-bold py-2 rounded-lg transition-all ${mode === "register" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500"}`}
+                            className={`flex-1 text-sm font-bold py-2 rounded-lg transition-all ${mode === "register" ? "bg-card text-emerald-700 dark:text-emerald-400 shadow-sm" : "text-muted-foreground"}`}
                         >
                             Criar Minha Loja
                         </button>
@@ -224,11 +224,11 @@ export default function Login() {
                         {isResettingPassword ? (
                             <div className="space-y-4 animate-fade-in">
                                 <div className="text-center mb-4">
-                                    <h2 className="text-xl font-bold text-slate-800">Recuperar Senha</h2>
-                                    <p className="text-xs text-slate-500">Digite sua nova senha de acesso abaixo</p>
+                                    <h2 className="text-xl font-bold text-foreground">Recuperar Senha</h2>
+                                    <p className="text-xs text-muted-foreground">Digite sua nova senha de acesso abaixo</p>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-slate-600 font-bold">Nova Senha</Label>
+                                    <Label className="text-foreground font-bold">Nova Senha</Label>
                                     <div className="relative">
                                         <Input 
                                             type={showNewPassword ? "text" : "password"}
@@ -242,7 +242,7 @@ export default function Login() {
                                         <button
                                             type="button"
                                             onClick={() => setShowNewPassword(v => !v)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                                         >
                                             {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                         </button>
@@ -254,7 +254,7 @@ export default function Login() {
                                 <button 
                                     type="button" 
                                     onClick={() => setIsResettingPassword(false)}
-                                    className="w-full text-xs text-slate-400 hover:text-emerald-600 font-bold"
+                                    className="w-full text-xs text-muted-foreground hover:text-primary font-bold"
                                 >
                                     Cancelar e Voltar
                                 </button>
@@ -264,13 +264,13 @@ export default function Login() {
                                 {mode === "register" && (
                                     <div className="space-y-3 animate-fade-in">
                                         <div className="space-y-1.5">
-                                            <Label className="text-slate-600 font-bold flex items-center gap-2"><Store className="h-4 w-4" /> Nome da sua Empresa</Label>
+                                            <Label className="text-foreground font-bold flex items-center gap-2"><Store className="h-4 w-4" /> Nome da sua Empresa</Label>
                                             <Input placeholder="Ex: Sítio São João" value={storeName} onChange={(e) => setStoreName(e.target.value)} required className="h-12 rounded-xl" />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <Label className="text-slate-600 font-bold flex items-center gap-2"><LinkIcon className="h-4 w-4" /> Link Personalizado</Label>
-                                            <div className="flex h-12 rounded-xl border border-input focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 overflow-hidden bg-white">
-                                                <div className="flex items-center px-3 bg-slate-50 text-slate-500 text-sm border-r select-none">/</div>
+                                            <Label className="text-foreground font-bold flex items-center gap-2"><LinkIcon className="h-4 w-4" /> Link Personalizado</Label>
+                                            <div className="flex h-12 rounded-xl border border-input focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 overflow-hidden bg-card">
+                                                <div className="flex items-center px-3 bg-muted text-muted-foreground text-sm border-r select-none">/</div>
                                                 <input 
                                                     placeholder="sitio-sao-joao" 
                                                     value={slug} 
@@ -284,20 +284,20 @@ export default function Login() {
                                                         setSlug(val.toLowerCase().replace(/[^a-z0-9-]/g, ""));
                                                     }} 
                                                     required 
-                                                    className="flex-1 bg-transparent px-3 text-sm focus:outline-none placeholder:text-muted-foreground"
+                                                    className="flex-1 bg-transparent px-3 text-sm focus:outline-none placeholder:text-muted-foreground text-foreground"
                                                 />
                                             </div>
-                                            <p className="text-[10px] text-slate-400 font-medium">Seus clientes vão acessar: hortidelivery.com.br/<span className="text-emerald-500 font-bold">{slug || "seu-nome"}</span></p>
+                                            <p className="text-[10px] text-muted-foreground font-medium">Seus clientes vão acessar: hortidelivery.com.br/<span className="text-primary font-bold">{slug || "seu-nome"}</span></p>
                                         </div>
                                     </div>
                                 )}
 
                                 <div className="space-y-1.5">
-                                    <Label className="text-slate-600 font-bold">Email</Label>
+                                    <Label className="text-foreground font-bold">Email</Label>
                                     <Input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-12 rounded-xl" />
                                 </div>
                                 <div className="space-y-1.5 relative">
-                                    <Label className="text-slate-600 font-bold">Senha</Label>
+                                    <Label className="text-foreground font-bold">Senha</Label>
                                     <div className="relative">
                                         <Input 
                                             type={showPassword ? "text" : "password"}
@@ -310,7 +310,7 @@ export default function Login() {
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(v => !v)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                                         >
                                             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                         </button>
@@ -319,7 +319,7 @@ export default function Login() {
                                         <button
                                             type="button"
                                             onClick={handleForgotPassword}
-                                            className="text-[10px] text-emerald-600 font-bold hover:underline absolute right-0 top-0 pt-1"
+                                            className="text-[10px] text-primary font-bold hover:underline absolute right-0 top-0 pt-1"
                                         >
                                             Esqueci minha senha
                                         </button>
@@ -335,7 +335,7 @@ export default function Login() {
 
                 </div>
                 
-                <p className="text-center text-xs text-slate-400 font-medium pt-4">
+                <p className="text-center text-xs text-muted-foreground font-medium pt-4">
                     Protegido e autenticado em tempo real.
                 </p>
             </div>

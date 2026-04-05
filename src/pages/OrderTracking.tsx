@@ -19,10 +19,10 @@ type Order = {
 };
 
 const STATUS_STEPS = [
-  { key: "pending",    label: "Recebido",   icon: Package,       color: "text-slate-500",  bg: "bg-slate-100"  },
-  { key: "preparing",  label: "Separando",  icon: ChefHat,       color: "text-blue-600",   bg: "bg-blue-100"   },
-  { key: "delivering", label: "Na Rota",    icon: Bike,          color: "text-amber-600",  bg: "bg-amber-100"  },
-  { key: "delivered",  label: "Entregue",   icon: CheckCircle2,  color: "text-emerald-600",bg: "bg-emerald-100"},
+  { key: "pending",    label: "Recebido",   icon: Package,       color: "text-muted-foreground dark:text-muted-foreground",  bg: "bg-muted dark:bg-muted"  },
+  { key: "preparing",  label: "Separando",  icon: ChefHat,       color: "text-blue-600 dark:text-blue-400",   bg: "bg-blue-100 dark:bg-blue-950/30"   },
+  { key: "delivering", label: "Na Rota",    icon: Bike,          color: "text-amber-600 dark:text-amber-400",  bg: "bg-amber-100 dark:bg-amber-950/30"  },
+  { key: "delivered",  label: "Entregue",   icon: CheckCircle2,  color: "text-emerald-600 dark:text-emerald-400",bg: "bg-emerald-100 dark:bg-emerald-950/30"},
 ];
 
 function getStepIndex(status: string) {
@@ -33,12 +33,12 @@ function StatusTimeline({ status }: { status: string }) {
   const currentIdx = getStepIndex(status);
 
   return (
-    <div className="mt-4 pt-4 border-t">
+    <div className="mt-4 pt-4 border-t border-border">
       <div className="flex items-center justify-between relative">
         {/* linha de progresso */}
-        <div className="absolute left-0 right-0 top-5 h-1 bg-slate-100 mx-6 z-0" />
+        <div className="absolute left-0 right-0 top-5 h-1 bg-muted mx-6 z-0" />
         <div
-          className="absolute left-0 top-5 h-1 bg-emerald-400 z-0 transition-all duration-700"
+          className="absolute left-0 top-5 h-1 bg-emerald-400 dark:bg-emerald-500 z-0 transition-all duration-700"
           style={{ width: `${currentIdx === 0 ? 0 : (currentIdx / (STATUS_STEPS.length - 1)) * 100}%`, marginLeft: "1.5rem", marginRight: "1.5rem", maxWidth: "calc(100% - 3rem)" }}
         />
 
@@ -50,11 +50,11 @@ function StatusTimeline({ status }: { status: string }) {
           return (
             <div key={step.key} className="flex flex-col items-center gap-1.5 z-10 flex-1">
               <div className={`h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300 ${
-                done ? step.bg : "bg-slate-100"
-              } ${active ? "ring-2 ring-offset-2 ring-emerald-400 scale-110" : ""}`}>
-                <Icon className={`h-5 w-5 ${done ? step.color : "text-slate-300"}`} />
+                done ? step.bg : "bg-muted"
+              } ${active ? "ring-2 ring-offset-2 ring-emerald-400 dark:ring-emerald-500 scale-110" : ""}`}>
+                <Icon className={`h-5 w-5 ${done ? step.color : "text-muted-foreground/40"}`} />
               </div>
-              <span className={`text-[10px] font-bold text-center leading-tight ${done ? "text-slate-700" : "text-slate-300"}`}>
+              <span className={`text-[10px] font-bold text-center leading-tight ${done ? "text-foreground" : "text-muted-foreground/40"}`}>
                 {step.label}
               </span>
             </div>
@@ -64,10 +64,10 @@ function StatusTimeline({ status }: { status: string }) {
 
       {/* Mensagem de status */}
       <div className="mt-4 text-center">
-        {status === "pending" && <p className="text-sm text-slate-500">⏳ Aguardando confirmação da loja</p>}
-        {status === "preparing" && <p className="text-sm text-blue-600 font-semibold">🧑‍🍳 Sua cesta está sendo separada!</p>}
-        {status === "delivering" && <p className="text-sm text-amber-600 font-semibold">🛵 Entregador a caminho!</p>}
-        {status === "delivered" && <p className="text-sm text-emerald-600 font-semibold">✅ Pedido entregue! Bom apetite 🥬</p>}
+        {status === "pending" && <p className="text-sm text-muted-foreground">⏳ Aguardando confirmação da loja</p>}
+        {status === "preparing" && <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">🧑‍🍳 Sua cesta está sendo separada!</p>}
+        {status === "delivering" && <p className="text-sm text-amber-600 dark:text-amber-400 font-semibold">🛵 Entregador a caminho!</p>}
+        {status === "delivered" && <p className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold">✅ Pedido entregue! Bom apetite 🥬</p>}
       </div>
     </div>
   );
@@ -141,7 +141,7 @@ export default function OrderTracking() {
           <div className="flex items-center gap-3 mb-2">
             {store && (
               <>
-                <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center overflow-hidden p-1.5">
+                <div className="h-10 w-10 rounded-xl bg-card/20 flex items-center justify-center overflow-hidden p-1.5">
                   <img 
                     src="/play_store_512.png" 
                     alt="Logo" 
@@ -168,7 +168,7 @@ export default function OrderTracking() {
 
       <main className="mx-auto max-w-2xl px-4 py-6">
         {/* Busca */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border mb-6">
+        <div className="bg-card rounded-2xl p-5 shadow-sm border border-border mb-6">
           <p className="text-sm font-bold text-foreground mb-3">Digite o telefone usado no pedido</p>
           <div className="flex gap-2">
             <Input
@@ -218,7 +218,7 @@ export default function OrderTracking() {
             </div>
 
             {orders.map((order) => (
-              <div key={order.id} className="bg-white rounded-2xl p-5 shadow-sm border animate-slide-up">
+              <div key={order.id} className="bg-card rounded-2xl p-5 shadow-sm border border-border animate-slide-up">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                   <div>
@@ -247,7 +247,7 @@ export default function OrderTracking() {
 
                 {/* Observações */}
                 {order.notes && (
-                  <div className="mt-3 p-3 bg-slate-50 rounded-lg">
+                  <div className="mt-3 p-3 bg-muted rounded-lg">
                     <p className="text-xs font-semibold text-muted-foreground mb-1">Observações:</p>
                     <p className="text-sm">{order.notes}</p>
                   </div>

@@ -32,9 +32,9 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(120,12%,95%)] dark:bg-slate-900 overflow-x-hidden flex flex-col font-sans">
+    <div className="min-h-screen bg-background overflow-x-hidden flex flex-col font-sans">
       {/* Navbar Minimalista */}
-      <nav className="w-full px-6 py-5 flex items-center justify-between sticky top-0 bg-[hsl(120,12%,95%)]/80 dark:bg-slate-900/80 backdrop-blur-md z-50">
+      <nav className="w-full px-6 py-5 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-50">
         <div className="flex items-center gap-2.5">
           <div className="h-10 w-10 min-w-[40px] rounded-xl gradient-hero flex items-center justify-center text-white shadow-button overflow-hidden p-1.5">
             <img 
@@ -43,9 +43,9 @@ export default function Landing() {
               className="w-full h-full object-contain"
             />
           </div>
-          <span className="font-extrabold text-xl text-slate-800 dark:text-slate-100 tracking-tight hidden sm:block">horti<span className="text-emerald-600 dark:text-emerald-400">delivery</span></span>
+          <span className="font-extrabold text-xl text-foreground tracking-tight hidden sm:block">horti<span className="text-primary">delivery</span></span>
         </div>
-        <ThemeToggle variant="compact" className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200" />
+        <ThemeToggle variant="compact" className="bg-muted text-foreground" />
       </nav>
 
       <main className="flex-1 flex flex-col px-4 mx-auto w-full max-w-5xl animate-fade-in relative">

@@ -214,12 +214,12 @@ export function WeighingModal({ order, onClose, onUpdate }: WeighingModalProps) 
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-card rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-5 border-b flex items-center justify-between bg-gradient-to-r from-emerald-50 to-blue-50">
+        <div className="p-5 border-b border-border flex items-center justify-between bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950/30 dark:to-blue-950/30">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-              <Scale className="h-5 w-5 text-emerald-600" />
+            <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+              <Scale className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
               <h2 className="text-lg font-extrabold text-foreground">Pesar Itens</h2>
@@ -228,9 +228,9 @@ export function WeighingModal({ order, onClose, onUpdate }: WeighingModalProps) 
           </div>
           <button
             onClick={onClose}
-            className="h-8 w-8 rounded-lg hover:bg-slate-100 flex items-center justify-center transition-colors"
+            className="h-8 w-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5 text-foreground" />
           </button>
         </div>
 
@@ -247,7 +247,7 @@ export function WeighingModal({ order, onClose, onUpdate }: WeighingModalProps) 
               {itemsNeedingWeighing.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                    <AlertCircle className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                     <h3 className="font-bold text-sm text-foreground">Itens Aguardando Pesagem</h3>
                   </div>
                   <div className="space-y-3">
@@ -256,7 +256,7 @@ export function WeighingModal({ order, onClose, onUpdate }: WeighingModalProps) 
                       const estimatedPrice = weight > 0 ? calculateItemPrice(item, weight) : 0;
 
                       return (
-                        <div key={item.id} className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <div key={item.id} className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
                               <p className="font-bold text-foreground">{item.product_name}</p>
@@ -277,12 +277,12 @@ export function WeighingModal({ order, onClose, onUpdate }: WeighingModalProps) 
                                 placeholder="0.000"
                                 value={weights[item.id] || ''}
                                 onChange={(e) => handleWeightChange(item.id, e.target.value)}
-                                className="w-full h-10 px-3 border-2 border-amber-300 rounded-lg text-lg font-bold text-center focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                className="w-full h-10 px-3 border-2 border-amber-300 dark:border-amber-700 rounded-lg text-lg font-bold text-center focus:outline-none focus:ring-2 focus:ring-amber-500 bg-card text-foreground"
                               />
                             </div>
                             <div className="text-right">
                               <p className="text-xs font-bold text-muted-foreground mb-1">Valor</p>
-                              <p className="text-lg font-extrabold text-emerald-600">
+                              <p className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">
                                 {estimatedPrice > 0 ? `R$ ${estimatedPrice.toFixed(2)}` : '—'}
                               </p>
                             </div>
@@ -300,14 +300,14 @@ export function WeighingModal({ order, onClose, onUpdate }: WeighingModalProps) 
                   <h3 className="font-bold text-sm text-muted-foreground mb-3">✅ Já Pesados</h3>
                   <div className="space-y-2">
                     {itemsAlreadyWeighed.map(item => (
-                      <div key={item.id} className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex justify-between items-center">
+                      <div key={item.id} className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3 flex justify-between items-center">
                         <div>
                           <p className="font-semibold text-sm text-foreground">{item.product_name}</p>
                           <p className="text-xs text-muted-foreground">
                             {item.quantity} un • {item.actual_weight_kg?.toFixed(3)}kg
                           </p>
                         </div>
-                        <p className="font-bold text-emerald-600">
+                        <p className="font-bold text-emerald-600 dark:text-emerald-400">
                           R$ {(item.final_price || 0).toFixed(2)}
                         </p>
                       </div>
@@ -322,7 +322,7 @@ export function WeighingModal({ order, onClose, onUpdate }: WeighingModalProps) 
                   <h3 className="font-bold text-sm text-muted-foreground mb-3">⚖️ Vendidos por Peso</h3>
                   <div className="space-y-2">
                     {itemsByWeight.map(item => (
-                      <div key={item.id} className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex justify-between items-center">
+                      <div key={item.id} className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex justify-between items-center">
                         <div>
                           <p className="font-semibold text-sm text-foreground">{item.product_name}</p>
                           <p className="text-xs text-muted-foreground">
@@ -331,7 +331,7 @@ export function WeighingModal({ order, onClose, onUpdate }: WeighingModalProps) 
                               : `${item.weight_kg?.toFixed(2)}kg`}
                           </p>
                         </div>
-                        <p className="font-bold text-blue-600">
+                        <p className="font-bold text-blue-600 dark:text-blue-400">
                           R$ {item.price.toFixed(2)}
                         </p>
                       </div>
@@ -344,10 +344,44 @@ export function WeighingModal({ order, onClose, onUpdate }: WeighingModalProps) 
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t bg-slate-50">
+        <div className="p-5 border-t border-border bg-muted">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm font-bold text-muted-foreground">Total Estimado:</span>
             <span className="text-2xl font-extrabold text-primary">
+              R$ {estimatedTotal.toFixed(2).replace(".", ",")}
+            </span>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 h-11 rounded-xl border-2 border-border text-foreground font-bold hover:bg-card transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!canSave || saving}
+              className="flex-1 h-11 rounded-xl bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {saving ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Salvar Pesagem
+                </>
+              )}
+            </button>
+          </div>
+          {!canSave && itemsNeedingWeighing.length > 0 && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">
+              ⚠️ Preencha o peso de todos os itens para salvar
+            </p>
+          )}
+        </div>
               R$ {estimatedTotal.toFixed(2).replace(".", ",")}
             </span>
           </div>

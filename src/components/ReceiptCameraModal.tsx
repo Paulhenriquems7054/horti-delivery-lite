@@ -166,12 +166,12 @@ export function ReceiptCameraModal({
 
   return (
     <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-card rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-5 border-b flex items-center justify-between bg-gradient-to-r from-emerald-50 to-blue-50">
+        <div className="p-5 border-b border-border flex items-center justify-between bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950/30 dark:to-blue-950/30">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-              <Camera className="h-5 w-5 text-emerald-600" />
+            <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+              <Camera className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
               <h2 className="text-lg font-extrabold text-foreground">Registrar Cupom Fiscal</h2>
@@ -180,9 +180,9 @@ export function ReceiptCameraModal({
           </div>
           <button
             onClick={onClose}
-            className="h-8 w-8 rounded-lg hover:bg-slate-100 flex items-center justify-center transition-colors"
+            className="h-8 w-8 rounded-lg hover:bg-muted flex items-center justify-center transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5 text-foreground" />
           </button>
         </div>
 
@@ -226,8 +226,8 @@ export function ReceiptCameraModal({
                 className="hidden"
               />
 
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <p className="text-sm text-blue-800 font-semibold flex items-start gap-2">
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                <p className="text-sm text-blue-800 dark:text-blue-200 font-semibold flex items-start gap-2">
                   <ImageIcon className="h-4 w-4 mt-0.5 shrink-0" />
                   <span>Posicione o cupom fiscal dentro da área tracejada para melhor qualidade da foto.</span>
                 </p>
@@ -237,7 +237,7 @@ export function ReceiptCameraModal({
 
           {mode === 'preview' && capturedImage && (
             <div className="space-y-4">
-              <div className="relative bg-slate-100 rounded-xl overflow-hidden">
+              <div className="relative bg-muted rounded-xl overflow-hidden">
                 <img
                   src={capturedImage}
                   alt="Cupom capturado"
@@ -259,7 +259,7 @@ export function ReceiptCameraModal({
                     const value = e.target.value.replace(/[^0-9.,]/g, '');
                     setReceiptTotal(value);
                   }}
-                  className="w-full h-12 px-4 border-2 border-emerald-300 rounded-xl text-lg font-bold text-center focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full h-12 px-4 border-2 border-emerald-300 dark:border-emerald-700 rounded-xl text-lg font-bold text-center focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-card text-foreground"
                   placeholder="0,00"
                   autoFocus
                 />
@@ -268,12 +268,12 @@ export function ReceiptCameraModal({
                     Valor estimado: R$ {orderTotal.toFixed(2).replace(".", ",")}
                   </p>
                   {parseFloat(receiptTotal.replace(',', '.')) > 0 && (
-                    <p className="text-xs font-bold text-emerald-600">
+                    <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
                       ✓ Valor confirmado
                     </p>
                   )}
                 </div>
-                <p className="text-xs text-amber-600 mt-2 font-semibold">
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 font-semibold">
                   ⚠️ Este valor substituirá o total do pedido
                 </p>
               </div>
@@ -281,7 +281,7 @@ export function ReceiptCameraModal({
               <div className="flex gap-3">
                 <button
                   onClick={retakePhoto}
-                  className="flex-1 h-12 rounded-xl border-2 border-slate-300 text-slate-700 font-bold hover:bg-slate-100 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 h-12 rounded-xl border-2 border-border text-foreground font-bold hover:bg-muted transition-colors flex items-center justify-center gap-2"
                 >
                   <RotateCcw className="h-4 w-4" />
                   Tirar Outra
@@ -297,7 +297,7 @@ export function ReceiptCameraModal({
               </div>
               
               {(!receiptTotal || parseFloat(receiptTotal.replace(',', '.')) <= 0) && (
-                <p className="text-xs text-red-600 text-center mt-2 font-semibold">
+                <p className="text-xs text-red-600 dark:text-red-400 text-center mt-2 font-semibold">
                   ⚠️ Informe o valor total do cupom para continuar
                 </p>
               )}

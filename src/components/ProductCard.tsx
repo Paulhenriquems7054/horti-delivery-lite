@@ -50,7 +50,7 @@ export function ProductCard({
   const inCart = isWeight ? (cartWeight ?? 0) > 0 : cartQty > 0;
 
   return (
-    <div className={`flex items-center gap-3 rounded-2xl bg-white p-3 shadow-card border transition-all ${inCart ? "border-primary/40 bg-emerald-50/30" : "border-border/60"}`}>
+    <div className={`flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card border transition-all ${inCart ? "border-primary/40 bg-emerald-50/30 dark:bg-emerald-950/20" : "border-border/60"}`}>
       {/* Imagem / Emoji */}
       <div className="flex-shrink-0 h-14 w-14 rounded-xl gradient-card flex items-center justify-center overflow-hidden">
         {product.image_url ? (
@@ -78,7 +78,7 @@ export function ProductCard({
               className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-colors ${
                 currentMode === 'unit' 
                   ? 'bg-primary text-white' 
-                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
               Por Unidade
@@ -88,7 +88,7 @@ export function ProductCard({
               className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-colors ${
                 currentMode === 'weight' 
                   ? 'bg-primary text-white' 
-                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
               Por Peso
@@ -98,7 +98,7 @@ export function ProductCard({
         
         {/* Informação do carrinho (apenas quando em modo peso e tem item) */}
         {isWeight && inCart && cartWeight && (
-          <p className="text-xs text-emerald-600 font-semibold mt-0.5">
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
             {cartWeight < 1 ? `${Math.round(cartWeight * 1000)}g` : `${cartWeight.toFixed(2)}kg`}
             {" "}≈ R$ {(cartWeight * pricePerKg).toFixed(2).replace(".", ",")}
           </p>
@@ -124,12 +124,12 @@ export function ProductCard({
           /* Modo unitário */
           cartQty > 0 ? (
             <div className="flex items-center gap-3 bg-accent rounded-full p-1 border border-primary/20">
-              <button onClick={onRemove} className="h-7 w-7 rounded-full bg-white text-primary font-bold flex items-center justify-center shadow-sm hover:bg-slate-50">-</button>
+              <button onClick={onRemove} className="h-7 w-7 rounded-full bg-card text-primary font-bold flex items-center justify-center shadow-sm hover:bg-muted">-</button>
               <span className="text-sm font-extrabold text-primary w-3 text-center">{cartQty}</span>
               <button onClick={onAdd} className="h-7 w-7 rounded-full bg-primary text-white font-bold flex items-center justify-center shadow-sm hover:bg-primary/90">+</button>
             </div>
           ) : (
-            <button onClick={onAdd} className="h-9 px-4 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 text-sm font-extrabold hover:bg-emerald-100 transition-colors">
+            <button onClick={onAdd} className="h-9 px-4 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-sm font-extrabold hover:bg-emerald-100 dark:hover:bg-emerald-950/50 transition-colors">
               Adicionar
             </button>
           )
