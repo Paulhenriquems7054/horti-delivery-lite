@@ -55,9 +55,13 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
   const [input, setInput] = useState("");
   const [error, setError] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showEmailLogin, setShowEmailLogin] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +71,37 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
       setError(true);
       setInput("");
       setTimeout(() => setError(false), 2000);
+    }
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!loginEmail.trim() || !loginPassword.trim()) {
+      toast.error("Preencha email e senha");
+      return;
+    }
+
+    setLoginLoading(true);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        toast.success("Login realizado com sucesso!");
+        onUnlock();
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao fazer login");
+      setError(true);
+      setTimeout(() => setError(false), 2000);
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -101,6 +136,69 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
       setResetLoading(false);
     }
   };
+
+  if (showEmailLogin) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6">
+        <div className="mb-8 flex flex-col items-center gap-3">
+          <div className="h-16 w-16 rounded-2xl bg-violet-600 flex items-center justify-center shadow-lg">
+            <Shield className="h-9 w-9 text-white" />
+          </div>
+          <h1 className="text-2xl font-extrabold text-white">Login de Desenvolvedor</h1>
+          <p className="text-slate-400 text-sm text-center max-w-sm">
+            Entre com seu email e senha
+          </p>
+        </div>
+
+        <form onSubmit={handleEmailLogin} className="w-full max-w-xs space-y-3">
+          <input
+            type="email"
+            placeholder="seu@email.com"
+            value={loginEmail}
+            onChange={e => setLoginEmail(e.target.value)}
+            autoFocus
+            className={`w-full h-12 px-4 rounded-xl bg-slate-800 text-white border ${error ? "border-red-500" : "border-slate-700"} focus:outline-none focus:border-violet-500`}
+          />
+          <input
+            type="password"
+            placeholder="Sua senha"
+            value={loginPassword}
+            onChange={e => setLoginPassword(e.target.value)}
+            className={`w-full h-12 px-4 rounded-xl bg-slate-800 text-white border ${error ? "border-red-500" : "border-slate-700"} focus:outline-none focus:border-violet-500`}
+          />
+          {error && <p className="text-red-400 text-sm text-center">Email ou senha incorretos</p>}
+          <button 
+            type="submit" 
+            disabled={loginLoading}
+            className="w-full h-12 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {loginLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Entrando...
+              </>
+            ) : (
+              "Entrar"
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowForgotPassword(true)}
+            className="w-full text-violet-400 hover:text-violet-300 text-sm font-semibold transition-colors"
+          >
+            Esqueci minha senha
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowEmailLogin(false)}
+            className="w-full h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-colors"
+          >
+            Voltar ao Login com PIN
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   if (showForgotPassword) {
     return (
@@ -149,7 +247,10 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
             </button>
             <button
               type="button"
-              onClick={() => setShowForgotPassword(false)}
+              onClick={() => {
+                setShowForgotPassword(false);
+                setShowEmailLogin(true);
+              }}
               className="w-full h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-colors"
             >
               Voltar ao Login
@@ -173,7 +274,7 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
       <form onSubmit={handleSubmit} className="w-full max-w-xs space-y-3">
         <input
           type="password"
-          placeholder="Senha de acesso"
+          placeholder="Senha de acesso (PIN)"
           value={input}
           onChange={e => setInput(e.target.value)}
           autoFocus
@@ -181,14 +282,22 @@ function PinScreen({ onUnlock }: { onUnlock: () => void }) {
         />
         {error && <p className="text-red-400 text-sm text-center">Senha incorreta</p>}
         <button type="submit" className="w-full h-12 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold transition-colors">
-          Entrar
+          Entrar com PIN
         </button>
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-700"></div>
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="bg-slate-950 px-2 text-slate-500">ou</span>
+          </div>
+        </div>
         <button
           type="button"
-          onClick={() => setShowForgotPassword(true)}
-          className="w-full text-violet-400 hover:text-violet-300 text-sm font-semibold transition-colors"
+          onClick={() => setShowEmailLogin(true)}
+          className="w-full h-12 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold transition-colors"
         >
-          Esqueci minha senha
+          Entrar com Email e Senha
         </button>
       </form>
     </div>
