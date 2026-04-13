@@ -178,7 +178,7 @@ export default function Admin() {
     <div className="min-h-screen bg-[hsl(120,12%,95%)] dark:bg-slate-900">
       {/* Header */}
       <header className="gradient-hero px-4 py-5 shadow-md sticky top-0 z-20">
-        <div className="mx-auto max-w-2xl flex items-center justify-between gap-3">
+        <div className="mx-auto max-w-6xl flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center overflow-hidden p-1.5">
               <img 
@@ -213,7 +213,7 @@ export default function Admin() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-5 pb-12">
+      <main className="mx-auto max-w-6xl px-4 py-5 pb-12">
         {/* Menu de Gestão */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
           <button
@@ -457,7 +457,7 @@ export default function Admin() {
 
         {/* Quadro Kanban (Horizontal Scroll Mobile, Grid Desktop) */}
         {!loading && (
-          <div className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-muted-foreground/20 sm:grid sm:grid-cols-5 sm:overflow-visible sm:snap-none">
+          <div className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-muted-foreground/20 xl:grid xl:grid-cols-5 xl:overflow-visible xl:snap-none">
             
             {[
               { id: "pending", title: "Novos Pedidos", icon: "🔔", bg: "bg-slate-100 dark:bg-slate-800", border: "border-slate-200 dark:border-slate-700" },
@@ -469,7 +469,7 @@ export default function Admin() {
               const columnOrders = orders.filter(o => o.status === col.id);
               
               return (
-                <div key={col.id} className={`flex-shrink-0 w-[85vw] sm:w-auto snap-center rounded-2xl ${col.bg} border ${col.border} flex flex-col max-h-[70vh] shadow-sm`}>
+                <div key={col.id} className={`flex-shrink-0 w-[88vw] sm:w-[420px] lg:w-[460px] xl:w-auto snap-center rounded-2xl ${col.bg} border ${col.border} flex flex-col max-h-[70vh] shadow-sm`}>
                   {/* Cabeçalho da Coluna Kanban */}
                   <div className="p-3 border-b border-black/5 dark:border-white/5 bg-black/5 dark:bg-white/5 flex items-center justify-between sticky top-0 rounded-t-2xl">
                     <div className="flex items-center gap-2">
@@ -493,16 +493,16 @@ export default function Admin() {
                           {/* Nome e ID */}
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div className="flex-1 min-w-0">
-                              <p className="font-extrabold text-sm text-foreground leading-tight truncate">{order.customer_name}</p>
+                              <p className="font-extrabold text-sm text-foreground leading-tight break-words line-clamp-2">{order.customer_name}</p>
                               <p className="text-[10px] text-muted-foreground font-mono mt-0.5">#{order.id.split('-')[0]}</p>
                             </div>
-                            <p className="font-black text-primary text-sm whitespace-nowrap shrink-0">R$ {order.total?.toFixed(2)}</p>
+                            <p className="font-black text-primary text-sm whitespace-nowrap shrink-0">R$ {order.total?.toFixed(2).replace(".", ",")}</p>
                           </div>
                           
                           {/* Endereço Breve */}
                           <div className="flex items-start gap-1.5 text-xs text-muted-foreground mb-3 bg-muted/50 dark:bg-muted/30 p-2 rounded-lg border border-border">
                             <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                            <span className="line-clamp-2 leading-tight break-words">{order.address}</span>
+                            <span className="line-clamp-3 leading-tight break-words">{order.address}</span>
                           </div>
 
                           {/* Botões de Ação do Kanban */}
