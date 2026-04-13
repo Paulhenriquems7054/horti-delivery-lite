@@ -47,13 +47,36 @@ function useDeliveryOrders(storeId?: string) {
         .from("orders")
         .select("*")
         .eq("store_id", storeId)
-        .eq("status", "delivering")
+        .in("status", ["ready_for_delivery", "delivering"])
         .order("created_at", { ascending: true });
       if (error) throw error;
       return data as Order[];
     },
     enabled: !!storeId,
     refetchInterval: 15_000,
+  });
+}
+
+function useStartDelivery() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "delivering" })
+        .eq("id", orderId);
+      if (error) throw error;
+      await (supabase as any).from("order_tracking").insert({
+        order_id: orderId,
+        status: "delivering",
+        notes: "Pedido saiu para entrega",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["delivery-orders"] });
+      toast.success("Rota iniciada! 🛵");
+    },
+    onError: () => toast.error("Erro ao iniciar rota"),
   });
 }
 
@@ -145,13 +168,17 @@ function PinScreen({ storeName, onUnlock }: { storeName: string; onUnlock: (pin:
 function OrderCard({ order }: { order: Order }) {
   const [confirming, setConfirming] = useState(false);
   const markDelivered = useMarkDelivered();
+  const startDelivery = useStartDelivery();
+  const isReady = order.status === "ready_for_delivery";
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="bg-amber-50 border-b border-amber-100 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Package className="h-4 w-4 text-amber-600" />
-          <span className="text-xs font-bold text-amber-700 uppercase tracking-wide">Na Rota</span>
+          <span className="text-xs font-bold text-amber-700 uppercase tracking-wide">
+            {isReady ? "Pronto para rota" : "Na Rota"}
+          </span>
         </div>
         <span className="text-xs text-slate-400 font-mono">#{order.id.split("-")[0]}</span>
       </div>
@@ -193,7 +220,16 @@ function OrderCard({ order }: { order: Order }) {
           </a>
         </div>
 
-        {!confirming ? (
+        {isReady ? (
+          <button
+            onClick={() => startDelivery.mutate(order.id)}
+            disabled={startDelivery.isPending}
+            className="w-full h-14 rounded-2xl bg-blue-500 hover:bg-blue-600 text-white font-extrabold text-base flex items-center justify-center gap-2 transition-colors shadow-md active:scale-[0.98] disabled:opacity-60"
+          >
+            {startDelivery.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Bike className="h-5 w-5" />}
+            Iniciar Entrega
+          </button>
+        ) : !confirming ? (
           <button
             onClick={() => setConfirming(true)}
             className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-base flex items-center justify-center gap-2 transition-colors shadow-md active:scale-[0.98]"

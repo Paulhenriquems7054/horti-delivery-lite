@@ -2,6 +2,7 @@ import { useRealtimeOrders, updateOrderStatus, deleteOrder } from "@/hooks/useOr
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { WeighingModal } from "@/components/WeighingModal";
 import { ReceiptCameraModal } from "@/components/ReceiptCameraModal";
+import { OrderDetailsModal } from "@/components/OrderDetailsModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Leaf,
@@ -19,6 +20,7 @@ import {
   AlertTriangle,
   Scale,
   Camera,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
@@ -28,7 +30,7 @@ import { LogOut, DollarSign } from "lucide-react";
 import { logAuditEvent } from "@/hooks/useAuditLog";
 import { useTenant } from "@/contexts/TenantContext";
 
-type StatusFilter = "all" | "pending" | "preparing" | "delivered";
+type StatusFilter = "all" | "pending" | "preparing" | "ready_for_delivery" | "delivering" | "delivered";
 
 export default function Admin() {
   const { store: tenantStore } = useTenant();
@@ -48,6 +50,7 @@ export default function Admin() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [weighingOrder, setWeighingOrder] = useState<any | null>(null);
   const [receiptOrder, setReceiptOrder] = useState<any | null>(null);
+  const [detailsOrder, setDetailsOrder] = useState<any | null>(null);
   const navigate = useNavigate();
 
   // Use TenantContext — no more manual store resolution
@@ -99,7 +102,14 @@ export default function Admin() {
     setUpdating(id);
     try {
       await updateOrderStatus(id, status);
-      const label = status === "preparing" ? "Preparando 🍳" : status === "delivering" ? "Na Rota 🛵" : "Entregue ✅";
+      const label =
+        status === "preparing"
+          ? "Preparando 🍳"
+          : status === "ready_for_delivery"
+            ? "Pronto para entrega 📦"
+            : status === "delivering"
+              ? "Na Rota 🛵"
+              : "Entregue ✅";
       toast.success(`Status atualizado: ${label}`);
     } catch {
       toast.error("Erro ao atualizar o status. Tente novamente.");
@@ -142,6 +152,8 @@ export default function Admin() {
     all: orders.length,
     pending: orders.filter((o) => o.status === "pending").length,
     preparing: orders.filter((o) => o.status === "preparing").length,
+    ready_for_delivery: orders.filter((o) => o.status === "ready_for_delivery").length,
+    delivering: orders.filter((o) => o.status === "delivering").length,
     delivered: orders.filter((o) => o.status === "delivered").length,
   };
 
@@ -149,6 +161,8 @@ export default function Admin() {
     { value: "all", label: "Todos", emoji: "📋" },
     { value: "pending", label: "Pendentes", emoji: "⏳" },
     { value: "preparing", label: "Preparando", emoji: "🍳" },
+    { value: "ready_for_delivery", label: "Pronto", emoji: "📦" },
+    { value: "delivering", label: "Na Rota", emoji: "🛵" },
     { value: "delivered", label: "Entregues", emoji: "✅" },
   ];
 
@@ -264,6 +278,19 @@ export default function Admin() {
             <div className="text-left flex-1 min-w-0">
               <h2 className="font-extrabold text-foreground text-base leading-tight">Cupons</h2>
               <p className="text-muted-foreground text-xs mt-0.5">Descontos</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => navigate("/admin/preparation")}
+            className="bg-card dark:bg-card border-2 border-cyan-200 dark:border-cyan-800 p-4 rounded-2xl flex items-center gap-3 shadow-sm hover:border-cyan-400 dark:hover:border-cyan-600 hover:bg-cyan-50/30 dark:hover:bg-cyan-900/20 transition-all group"
+          >
+            <div className="h-12 w-12 rounded-xl bg-cyan-100 dark:bg-cyan-900/50 shadow-card flex items-center justify-center text-2xl shrink-0">
+              ⚖️
+            </div>
+            <div className="text-left flex-1 min-w-0">
+              <h2 className="font-extrabold text-foreground text-base leading-tight">Separação</h2>
+              <p className="text-muted-foreground text-xs mt-0.5">Balança e conferência</p>
             </div>
           </button>
 
@@ -390,7 +417,7 @@ export default function Admin() {
               R$ {pendingRevenue.toFixed(2).replace(".", ",")}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {counts.pending + counts.preparing} pedidos em andamento
+              {counts.pending + counts.preparing + counts.ready_for_delivery + counts.delivering} pedidos em andamento
             </p>
           </div>
         </div>
@@ -430,11 +457,12 @@ export default function Admin() {
 
         {/* Quadro Kanban (Horizontal Scroll Mobile, Grid Desktop) */}
         {!loading && (
-          <div className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-muted-foreground/20 sm:grid sm:grid-cols-4 sm:overflow-visible sm:snap-none">
+          <div className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-muted-foreground/20 sm:grid sm:grid-cols-5 sm:overflow-visible sm:snap-none">
             
             {[
               { id: "pending", title: "Novos Pedidos", icon: "🔔", bg: "bg-slate-100 dark:bg-slate-800", border: "border-slate-200 dark:border-slate-700" },
               { id: "preparing", title: "Separando", icon: "🍳", bg: "bg-blue-50 dark:bg-blue-950/30", border: "border-blue-100 dark:border-blue-900" },
+              { id: "ready_for_delivery", title: "Pronto p/ Entrega", icon: "📦", bg: "bg-cyan-50 dark:bg-cyan-950/30", border: "border-cyan-100 dark:border-cyan-900" },
               { id: "delivering", title: "Na Rota", icon: "🛵", bg: "bg-amber-50 dark:bg-amber-950/30", border: "border-amber-100 dark:border-amber-900" },
               { id: "delivered", title: "Concluído", icon: "✅", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-100 dark:border-emerald-900" },
             ].map((col) => {
@@ -479,6 +507,14 @@ export default function Admin() {
 
                           {/* Botões de Ação do Kanban */}
                           <div className="pt-2 border-t border-slate-100 space-y-2">
+                            <button
+                              onClick={() => setDetailsOrder(order)}
+                              className="w-full h-8 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition-colors flex items-center justify-center gap-1"
+                              title="Ver detalhes do pedido"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              <span className="truncate">Ver pedido</span>
+                            </button>
                             {col.id === "pending" && (
                               <>
                                 {/* Linha 1: Botão principal */}
@@ -540,11 +576,11 @@ export default function Admin() {
                               <>
                                 {/* Linha 1: Botão principal */}
                                 <button 
-                                  onClick={() => handleStatus(order.id, "delivering")}
+                                  onClick={() => handleStatus(order.id, "ready_for_delivery")}
                                   disabled={updating === order.id}
-                                  className="w-full h-8 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold hover:bg-amber-200 active:bg-amber-300 transition-colors flex justify-center items-center gap-1"
+                                  className="w-full h-8 rounded-lg bg-cyan-100 text-cyan-700 text-xs font-bold hover:bg-cyan-200 active:bg-cyan-300 transition-colors flex justify-center items-center gap-1"
                                 >
-                                  {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : <span className="truncate">Enviar 🛵</span>}
+                                  {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : <span className="truncate">Pronto 📦</span>}
                                 </button>
                                 
                                 {/* Linha 2: Ações secundárias */}
@@ -591,6 +627,41 @@ export default function Admin() {
                                     <PhoneCall className="h-3.5 w-3.5" />
                                   </a>
                                 </div>
+                              </>
+                            )}
+                            {col.id === "ready_for_delivery" && (
+                              <>
+                                <button
+                                  onClick={() => handleStatus(order.id, "delivering")}
+                                  disabled={updating === order.id}
+                                  className="w-full h-8 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold hover:bg-amber-200 active:bg-amber-300 transition-colors flex justify-center items-center gap-1"
+                                >
+                                  {updating === order.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : <span className="truncate">Enviar 🛵</span>}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteOrder(order.id, order.status)}
+                                  disabled={deletingOrder === order.id}
+                                  className={`w-full h-8 rounded-lg flex items-center justify-center gap-1 text-xs font-bold transition-colors ${
+                                    confirmDelete === order.id
+                                      ? "bg-red-500 text-white"
+                                      : "bg-red-50 text-red-600 hover:bg-red-100"
+                                  }`}
+                                  title="Excluir pedido"
+                                >
+                                  {deletingOrder === order.id ? (
+                                    <RefreshCw className="h-3 w-3 animate-spin" />
+                                  ) : confirmDelete === order.id ? (
+                                    <>
+                                      <AlertTriangle className="h-3 w-3" />
+                                      <span className="truncate">Confirmar</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Trash2 className="h-3 w-3" />
+                                      <span className="truncate">Excluir</span>
+                                    </>
+                                  )}
+                                </button>
                               </>
                             )}
                             {col.id === "delivering" && (
@@ -692,6 +763,12 @@ export default function Admin() {
           }}
         />
       )}
+
+      {/* Modal de detalhes do pedido */}
+      <OrderDetailsModal
+        order={detailsOrder}
+        onClose={() => setDetailsOrder(null)}
+      />
     </div>
   );
 }

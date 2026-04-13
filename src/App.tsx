@@ -12,6 +12,7 @@ import AdminCoupons from "./pages/AdminCoupons";
 import AdminStores from "./pages/AdminStores";
 import AdminDeliveryZones from "./pages/AdminDeliveryZones";
 import AdminAnalytics from "./pages/AdminAnalytics";
+import AdminPreparation from "./pages/AdminPreparation";
 import OrderTracking from "./pages/OrderTracking";
 import CustomerTracking from "./pages/CustomerTracking";
 import Delivery from "./pages/Delivery";
@@ -53,6 +54,7 @@ const App = () => (
           <Route path="/admin/stores" element={<ProtectedRoute><AdminStores /></ProtectedRoute>} />
           <Route path="/admin/delivery-zones" element={<ProtectedRoute><AdminDeliveryZones /></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>} />
+          <Route path="/admin/preparation" element={<ProtectedRoute><AdminPreparation /></ProtectedRoute>} />
           <Route path="/admin/direct-delivery" element={<ProtectedRoute><AdminDirectDelivery /></ProtectedRoute>} />
 
           {/* ── Entregador por loja ── */}
