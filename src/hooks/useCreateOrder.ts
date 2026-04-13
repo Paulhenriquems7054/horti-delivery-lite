@@ -22,11 +22,14 @@ export function useCreateOrder() {
   return useMutation({
     mutationFn: async (input: CreateOrderInput) => {
       // 1. Cria o pedido
+      // Normaliza o telefone para garantir consistência na busca
+      const normalizedPhone = input.phone.replace(/\D/g, "");
+      
       const { data: order, error: oErr } = await supabase
         .from("orders")
         .insert({
           customer_name: input.customer_name,
-          phone: input.phone,
+          phone: normalizedPhone,
           address: input.address,
           total: input.total,
           status: "pending",
