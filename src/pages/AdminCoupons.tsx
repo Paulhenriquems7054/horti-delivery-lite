@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCoupons, useCreateCoupon, useUpdateCoupon, useDeleteCoupon } from "@/hooks/useCoupons";
-import { useStores } from "@/hooks/useStores";
+import { useMyStore } from "@/hooks/useStores";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Ticket, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -12,8 +11,8 @@ import { useNavigate } from "react-router-dom";
 
 export default function AdminCoupons() {
   const navigate = useNavigate();
-  const { data: stores } = useStores();
-  const [selectedStore, setSelectedStore] = useState<string>();
+  const { data: myStore } = useMyStore();
+  const selectedStore = myStore?.id;
   const { data: coupons, isLoading } = useCoupons(selectedStore);
   const createCoupon = useCreateCoupon();
   const updateCoupon = useUpdateCoupon();
@@ -71,6 +70,10 @@ export default function AdminCoupons() {
       toast.error("Preencha código e valor do desconto");
       return;
     }
+    if (!selectedStore) {
+      toast.error("Nenhuma loja selecionada");
+      return;
+    }
     try {
       const payload = {
         code: form.code.toUpperCase(),
@@ -81,7 +84,7 @@ export default function AdminCoupons() {
         // Input date should expire at end of selected day.
         expires_at: form.expires_at ? `${form.expires_at}T23:59:59` : undefined,
         active: form.active,
-        store_id: form.store_id || undefined,
+        store_id: selectedStore, // Usa automaticamente a loja do usuário logado
       };
 
       if (editId) {
@@ -122,21 +125,13 @@ export default function AdminCoupons() {
 
       <main className="mx-auto max-w-2xl px-4 py-6">
         <div className="flex items-center justify-between mb-4 gap-3">
-          <Select value={selectedStore} onValueChange={setSelectedStore}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Todas as lojas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as lojas</SelectItem>
-              {stores?.map((s) => (
-                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <p className="text-sm text-muted-foreground">
+            {myStore ? `Cupons da loja: ${myStore.name}` : "Carregando loja..."}
+          </p>
 
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button onClick={openNew}>
+              <Button onClick={openNew} disabled={!myStore}>
                 <Plus className="mr-2 h-4 w-4" /> Novo Cupom
               </Button>
             </DialogTrigger>
@@ -188,17 +183,7 @@ export default function AdminCoupons() {
                 <p className="text-xs text-muted-foreground -mt-1">
                   Expira ao final do dia selecionado.
                 </p>
-                <Select value={form.store_id || "all"} onValueChange={(v) => setForm((f) => ({ ...f, store_id: v === "all" ? "" : v }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Loja (opcional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as lojas</SelectItem>
-                    {stores?.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {/* Campo store_id removido - usa automaticamente a loja do usuário */}
                 <div className="flex items-center gap-2">
                   <Switch checked={form.active} onCheckedChange={(v) => setForm((f) => ({ ...f, active: v }))} />
                   <span className="text-sm text-muted-foreground">Cupom ativo</span>

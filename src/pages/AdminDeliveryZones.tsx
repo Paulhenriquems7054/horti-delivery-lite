@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDeliveryZones, useManageDeliveryZone } from "@/hooks/useDeliveryZones";
-import { useStores } from "@/hooks/useStores";
+import { useMyStore } from "@/hooks/useStores";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, MapPin, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -12,8 +11,8 @@ import { useNavigate } from "react-router-dom";
 
 export default function AdminDeliveryZones() {
   const navigate = useNavigate();
-  const { data: stores } = useStores();
-  const [selectedStore, setSelectedStore] = useState<string>();
+  const { data: myStore } = useMyStore();
+  const selectedStore = myStore?.id;
   const { data: zones, isLoading } = useDeliveryZones(selectedStore);
   const manageZone = useManageDeliveryZone();
 
@@ -50,8 +49,12 @@ export default function AdminDeliveryZones() {
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.store_id) {
-      toast.error("Preencha nome e selecione a loja");
+    if (!form.name) {
+      toast.error("Preencha o nome da zona");
+      return;
+    }
+    if (!selectedStore) {
+      toast.error("Nenhuma loja selecionada");
       return;
     }
     try {
@@ -60,7 +63,7 @@ export default function AdminDeliveryZones() {
         fee: Number(form.fee) || 0,
         min_order: Number(form.min_order) || 0,
         active: form.active,
-        store_id: form.store_id,
+        store_id: selectedStore, // Usa automaticamente a loja do usuário logado
       };
 
       if (editId) {
@@ -101,20 +104,13 @@ export default function AdminDeliveryZones() {
 
       <main className="mx-auto max-w-2xl px-4 py-6">
         <div className="flex items-center justify-between mb-4 gap-3">
-          <Select value={selectedStore} onValueChange={setSelectedStore}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Selecione a loja" />
-            </SelectTrigger>
-            <SelectContent>
-              {stores?.map((s) => (
-                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <p className="text-sm text-muted-foreground">
+            {myStore ? `Zonas da loja: ${myStore.name}` : "Carregando loja..."}
+          </p>
 
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button onClick={openNew} disabled={!selectedStore}>
+              <Button onClick={openNew} disabled={!myStore}>
                 <Plus className="mr-2 h-4 w-4" /> Nova Zona
               </Button>
             </DialogTrigger>
@@ -123,16 +119,6 @@ export default function AdminDeliveryZones() {
                 <DialogTitle>{editId ? "Editar Zona" : "Nova Zona"}</DialogTitle>
               </DialogHeader>
               <div className="space-y-3 mt-2">
-                <Select value={form.store_id} onValueChange={(v) => setForm((f) => ({ ...f, store_id: v }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a loja" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stores?.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
                 <Input
                   placeholder="Nome da zona (ex: Centro)"
                   value={form.name}
@@ -167,7 +153,7 @@ export default function AdminDeliveryZones() {
         {!selectedStore && (
           <div className="text-center py-12">
             <MapPin className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-muted-foreground">Selecione uma loja para ver as zonas de entrega</p>
+            <p className="text-muted-foreground">Você precisa ter uma loja cadastrada para gerenciar zonas de entrega</p>
           </div>
         )}
 

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useStores, useCreateStore, useUpdateStore, useDeleteStore } from "@/hooks/useStores";
+import { useState, useEffect } from "react";
+import { useMyStore, useCreateStore, useUpdateStore, useDeleteStore, Store } from "@/hooks/useStores";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,13 +8,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Pencil, Trash2, Store, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AdminStores() {
   const navigate = useNavigate();
-  const { data: stores, isLoading } = useStores();
+  const { data: myStore, isLoading } = useMyStore();
   const createStore = useCreateStore();
   const updateStore = useUpdateStore();
   const deleteStore = useDeleteStore();
+  
+  // Converte a loja única em array para compatibilidade com a UI existente
+  const stores: Store[] = myStore ? [myStore] : [];
 
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -62,11 +66,23 @@ export default function AdminStores() {
       return;
     }
     try {
+      // Obtém o usuário atual para associar à loja
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
+
       if (editId) {
         await updateStore.mutateAsync({ id: editId, ...form });
         toast.success("Loja atualizada!");
       } else {
-        await createStore.mutateAsync(form);
+        // Verifica se já existe uma loja para este usuário
+        if (myStore) {
+          toast.error("Você já possui uma loja cadastrada");
+          return;
+        }
+        await createStore.mutateAsync({ ...form, user_id: user.id });
         toast.success("Loja criada!");
       }
       setOpen(false);
@@ -100,12 +116,17 @@ export default function AdminStores() {
 
       <main className="mx-auto max-w-2xl px-4 py-6">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-sm text-muted-foreground">Total: {stores?.length || 0} lojas</p>
+          <p className="text-sm text-muted-foreground">
+            {myStore ? "Sua loja" : "Você ainda não tem uma loja cadastrada"}
+          </p>
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button onClick={openNew}>
-                <Plus className="mr-2 h-4 w-4" /> Nova Loja
-              </Button>
+              {/* Só mostra botão Nova Loja se não tiver loja */}
+              {!myStore && (
+                <Button onClick={openNew}>
+                  <Plus className="mr-2 h-4 w-4" /> Nova Loja
+                </Button>
+              )}
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>

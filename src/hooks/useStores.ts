@@ -13,8 +13,10 @@ export interface Store {
   active: boolean;
   delivery_pin?: string;
   created_at: string;
+  user_id?: string;
 }
 
+/** Busca TODAS as lojas - use apenas para SuperAdmin */
 export function useStores() {
   return useQuery({
     queryKey: ["stores"],
@@ -25,6 +27,26 @@ export function useStores() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as Store[];
+    },
+  });
+}
+
+/** Busca apenas a loja do usuário autenticado - use para Admin de loja */
+export function useMyStore() {
+  return useQuery({
+    queryKey: ["my-store"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { data, error } = await supabase
+        .from("stores")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data as Store | null;
     },
   });
 }
