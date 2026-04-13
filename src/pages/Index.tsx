@@ -232,7 +232,7 @@ export default function Index() {
             <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100">
               <CheckCircle2 className="h-14 w-14 text-emerald-500" />
             </div>
-            <h1 className="text-3xl font-extrabold text-foreground">Pedido recebido!</h1>
+            <h1 className="text-3xl font-extrabold text-foreground">Pedido enviado</h1>
             <p className="text-muted-foreground mt-2 text-lg leading-relaxed">
               Vamos preparar sua cesta com carinho 🥬✨
             </p>
