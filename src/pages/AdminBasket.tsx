@@ -16,6 +16,7 @@ export default function AdminBasket() {
   const [newProductQuantity, setNewProductQuantity] = useState("1");
   const [newProductUnit, setNewProductUnit] = useState("un");
   const [newProductImageUrl, setNewProductImageUrl] = useState("");
+  const [newProductImageFile, setNewProductImageFile] = useState<File | null>(null);
   const [basketName, setBasketName] = useState("");
   const [basketPrice, setBasketPrice] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,6 +30,16 @@ export default function AdminBasket() {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [showAllProducts, setShowAllProducts] = useState(false);
   const [editingWeightProductId, setEditingWeightProductId] = useState<string | null>(null);
+
+  const uploadProductImageFile = async (productId: string, file: File) => {
+    const fileExt = file.name.split(".").pop() || "jpg";
+    const filePath = `${Date.now()}_${productId}.${fileExt}`;
+    const { error } = await supabase.storage.from("arquivos").upload(filePath, file);
+    if (error) throw error;
+
+    const { data: urlData } = supabase.storage.from("arquivos").getPublicUrl(filePath);
+    return urlData.publicUrl;
+  };
 
   const { data: basket, isLoading } = useQuery({
     queryKey: ["admin-active-basket"],
@@ -145,13 +156,16 @@ export default function AdminBasket() {
         .from("baskets").select("store_id").eq("id", basket.id).single();
 
       // 1. Criar o produto com store_id
+      let finalImageUrl = newProductImageUrl;
+      const shouldUploadImage = !!newProductImageFile;
+
       const { data: prodData, error: prodErr } = await supabase
         .from("products")
         .insert([{ 
            name: newProductName, 
            price: priceVal, 
            unit: newProductUnit,
-           image_url: newProductImageUrl,
+           image_url: shouldUploadImage ? null : finalImageUrl,
            active: true,
            store_id: basketData?.store_id ?? null,
         }])
@@ -159,6 +173,16 @@ export default function AdminBasket() {
         .single();
 
       if (prodErr || !prodData) throw prodErr || new Error("Erro ao criar produto");
+
+      if (shouldUploadImage && newProductImageFile) {
+        finalImageUrl = await uploadProductImageFile(prodData.id, newProductImageFile);
+        const { error: imgErr } = await supabase
+          .from("products")
+          .update({ image_url: finalImageUrl })
+          .eq("id", prodData.id);
+
+        if (imgErr) throw imgErr;
+      }
 
       // 2. Vincular na cesta
       const { error: itemErr } = await supabase
@@ -174,6 +198,7 @@ export default function AdminBasket() {
       setNewProductQuantity("1");
       setNewProductUnit("un");
       setNewProductImageUrl("");
+      setNewProductImageFile(null);
       queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] });
     },
     onError: (err: any) => toast.error(err.message)
@@ -229,11 +254,16 @@ export default function AdminBasket() {
   });
 
   const editItemMutation = useMutation({
-    mutationFn: async (data: { itemId: string; productId: string; name: string; quantity: number; price: number; unit: string; image_url: string }) => {
+    mutationFn: async (data: { itemId: string; productId: string; name: string; quantity: number; price: number; unit: string; image_url: string; image_file?: File | null }) => {
+      let imageUrl = data.image_url;
+      if (data.image_file) {
+        imageUrl = await uploadProductImageFile(data.productId, data.image_file);
+      }
+
       // 1. Atualizar produto
       const { error: prodErr } = await supabase
         .from("products")
-        .update({ name: data.name, price: data.price, unit: data.unit, image_url: data.image_url })
+        .update({ name: data.name, price: data.price, unit: data.unit, image_url: imageUrl })
         .eq("id", data.productId);
       if (prodErr) throw prodErr;
 
@@ -265,16 +295,10 @@ export default function AdminBasket() {
 
   const uploadImageMutation = useMutation({
     mutationFn: async ({ productId, file }: { productId: string, file: File }) => {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${Date.now()}_${productId}.${fileExt}`;
-      const { data, error } = await supabase.storage.from('arquivos').upload(filePath, file);
-      if (error) throw error;
-      
-      const { data: urlData } = supabase.storage.from('arquivos').getPublicUrl(filePath);
-      
+      const imageUrl = await uploadProductImageFile(productId, file);
       const { error: updateErr } = await supabase
         .from('products')
-        .update({ image_url: urlData.publicUrl })
+        .update({ image_url: imageUrl })
         .eq('id', productId);
         
       if (updateErr) throw updateErr;
@@ -283,10 +307,15 @@ export default function AdminBasket() {
   });
 
   const editProductMutation = useMutation({
-    mutationFn: async (data: { productId: string; name: string; price: number; unit: string; image_url: string }) => {
+    mutationFn: async (data: { productId: string; name: string; price: number; unit: string; image_url: string; image_file?: File | null }) => {
+      let imageUrl = data.image_url;
+      if (data.image_file) {
+        imageUrl = await uploadProductImageFile(data.productId, data.image_file);
+      }
+
       const { error } = await supabase
         .from("products")
-        .update({ name: data.name, price: data.price, unit: data.unit, image_url: data.image_url })
+        .update({ name: data.name, price: data.price, unit: data.unit, image_url: imageUrl })
         .eq("id", data.productId);
       if (error) throw error;
     },
@@ -474,6 +503,21 @@ export default function AdminBasket() {
                 className="w-full mt-1 h-11 px-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 bg-card text-foreground" 
               />
             </div>
+            <div className="sm:col-span-4">
+              <label className="text-xs font-bold text-muted-foreground">Ou envie foto da galeria/câmera</label>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => setNewProductImageFile(e.target.files?.[0] || null)}
+                className="w-full mt-1 h-11 px-3 py-2 border border-border rounded-xl text-sm bg-card text-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-primary file:font-semibold"
+              />
+              {newProductImageFile && (
+                <p className="text-xs text-muted-foreground mt-1 truncate">
+                  Selecionado: {newProductImageFile.name}
+                </p>
+              )}
+            </div>
           </div>
           
           <div className="mt-4 flex flex-col gap-3">
@@ -606,7 +650,9 @@ export default function AdminBasket() {
                         </div>
                         <div className="col-span-2 sm:col-span-3 flex items-center gap-2">
                           <div className="h-9 w-9 shrink-0 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden">
-                            {editingItem.image_url ? (
+                            {editingItem.image_file ? (
+                              <img src={URL.createObjectURL(editingItem.image_file)} alt="" className="w-full h-full object-cover" />
+                            ) : editingItem.image_url ? (
                               <img src={editingItem.image_url} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <span className="text-xs">🖼️</span>
@@ -622,6 +668,16 @@ export default function AdminBasket() {
                               placeholder="https://..."
                             />
                           </div>
+                        </div>
+                        <div className="col-span-2 sm:col-span-3">
+                          <label className="text-xs font-bold text-muted-foreground">Upload de foto (galeria/câmera)</label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            onChange={(e) => setEditingItem({ ...editingItem, image_file: e.target.files?.[0] || null })}
+                            className="w-full h-9 px-3 py-1 border border-border rounded-lg text-xs bg-card text-foreground file:mr-2 file:rounded-md file:border-0 file:bg-primary/10 file:px-2 file:py-1 file:text-primary file:font-semibold"
+                          />
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -639,7 +695,8 @@ export default function AdminBasket() {
                             quantity: editingItem.quantity || 1,
                             price: editingItem.price,
                             unit: editingItem.unit,
-                            image_url: editingItem.image_url
+                            image_url: editingItem.image_url,
+                            image_file: editingItem.image_file
                           })}
                           disabled={editItemMutation.isPending}
                           className="flex-1 h-9 rounded-lg bg-primary text-white text-sm font-bold flex items-center justify-center gap-1 hover:bg-primary/90"
@@ -884,7 +941,9 @@ export default function AdminBasket() {
                                     </div>
                                     <div className="col-span-2 sm:col-span-3 flex items-center gap-2">
                                       <div className="h-9 w-9 shrink-0 bg-muted border border-border rounded-lg flex items-center justify-center overflow-hidden">
-                                        {editingProduct.image_url ? (
+                                        {editingProduct.image_file ? (
+                                          <img src={URL.createObjectURL(editingProduct.image_file)} alt="" className="w-full h-full object-cover" />
+                                        ) : editingProduct.image_url ? (
                                           <img src={editingProduct.image_url} alt="" className="w-full h-full object-cover" />
                                         ) : (
                                           <span className="text-xs">🖼️</span>
@@ -901,6 +960,16 @@ export default function AdminBasket() {
                                         />
                                       </div>
                                     </div>
+                                    <div className="col-span-2 sm:col-span-3">
+                                      <label className="text-xs font-bold text-muted-foreground">Upload de foto (galeria/câmera)</label>
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        capture="environment"
+                                        onChange={(e) => setEditingProduct({ ...editingProduct, image_file: e.target.files?.[0] || null })}
+                                        className="w-full h-9 px-3 py-1 border border-border rounded-lg text-xs bg-card text-foreground file:mr-2 file:rounded-md file:border-0 file:bg-primary/10 file:px-2 file:py-1 file:text-primary file:font-semibold"
+                                      />
+                                    </div>
                                   </div>
                                   <div className="flex gap-2">
                                     <button 
@@ -915,7 +984,8 @@ export default function AdminBasket() {
                                         name: editingProduct.name,
                                         price: editingProduct.price,
                                         unit: editingProduct.unit,
-                                        image_url: editingProduct.image_url
+                                        image_url: editingProduct.image_url,
+                                        image_file: editingProduct.image_file
                                       })}
                                       disabled={editProductMutation.isPending}
                                       className="flex-1 h-9 rounded-lg bg-primary text-white text-sm font-bold flex items-center justify-center gap-1 hover:bg-primary/90"
@@ -926,13 +996,34 @@ export default function AdminBasket() {
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-2">
-                                  <div className="h-8 w-8 shrink-0 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                                  <label className="h-8 w-8 shrink-0 bg-muted rounded-lg flex items-center justify-center overflow-hidden cursor-pointer relative group" title="Alterar foto (galeria/câmera)">
                                     {product.image_url ? (
                                       <img src={product.image_url} alt="" className="w-full h-full object-cover" />
                                     ) : (
                                       <span className="text-sm">🥬</span>
                                     )}
-                                  </div>
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Plus className="h-3 w-3 text-white" />
+                                    </div>
+                                    <input
+                                      type="file"
+                                      className="hidden"
+                                      accept="image/*"
+                                      capture="environment"
+                                      onChange={(e) => {
+                                        if (e.target.files?.[0]) {
+                                          toast.loading("Enviando foto...", { id: `up-prod-${product.id}` });
+                                          uploadImageMutation.mutate(
+                                            { productId: product.id, file: e.target.files[0] },
+                                            {
+                                              onSuccess: () => toast.success("Foto atualizada!", { id: `up-prod-${product.id}` }),
+                                              onError: () => toast.error("Erro no envio", { id: `up-prod-${product.id}` }),
+                                            }
+                                          );
+                                        }
+                                      }}
+                                    />
+                                  </label>
                                   <div className="flex-1 min-w-0">
                                     <p className="font-bold text-xs text-foreground truncate">{product.name}</p>
                                     <p className="text-[10px] text-muted-foreground">
