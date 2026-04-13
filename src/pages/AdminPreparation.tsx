@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, Scale, Eye, PackageCheck, Camera, User, Weight, Play } from "lucide-react";
+import { ArrowLeft, Loader2, Scale, Eye, PackageCheck, Camera, User, Weight, Play, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { useTenant } from "@/contexts/TenantContext";
 import { useRealtimeOrders, updateOrderStatus } from "@/hooks/useOrders";
 import { WeighingModal } from "@/components/WeighingModal";
 import { OrderDetailsModal } from "@/components/OrderDetailsModal";
 import { ReceiptCameraModal } from "@/components/ReceiptCameraModal";
+import { ReceiptValueModal } from "@/components/ReceiptValueModal";
 
 type RoleTab = "separator" | "scale";
 
@@ -19,6 +20,7 @@ export default function AdminPreparation() {
   const [weighingOrder, setWeighingOrder] = useState<any | null>(null);
   const [detailsOrder, setDetailsOrder] = useState<any | null>(null);
   const [receiptOrder, setReceiptOrder] = useState<any | null>(null);
+  const [valueOrder, setValueOrder] = useState<any | null>(null);
 
   // Pedidos para Separador: status pending (aguardando separação)
   const separatorOrders = orders.filter((o) => o.status === "pending");
@@ -205,18 +207,24 @@ export default function AdminPreparation() {
                 </p>
 
                 {/* Botões da Balança */}
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setDetailsOrder(order)}
                     className="h-11 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold flex items-center justify-center gap-1 hover:bg-slate-200"
                   >
-                    <Eye className="h-4 w-4" /> Ver
+                    <Eye className="h-4 w-4" /> Ver Itens
                   </button>
                   <button
                     onClick={() => setWeighingOrder(order)}
                     className="h-11 rounded-lg bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center gap-1 hover:bg-amber-200"
                   >
                     <Scale className="h-4 w-4" /> Pesar
+                  </button>
+                  <button
+                    onClick={() => setValueOrder(order)}
+                    className="h-11 rounded-lg bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center gap-1 hover:bg-blue-200"
+                  >
+                    <DollarSign className="h-4 w-4" /> Valor Cupom
                   </button>
                   <button
                     onClick={() => handleStatus(order.id, "ready_for_delivery")}
@@ -256,6 +264,19 @@ export default function AdminPreparation() {
           onSuccess={() => {
             setReceiptOrder(null);
             toast.success("Cupom fiscal registrado com sucesso!");
+          }}
+        />
+      )}
+
+      {valueOrder && (
+        <ReceiptValueModal
+          orderId={valueOrder.id}
+          customerName={valueOrder.customer_name}
+          orderTotal={valueOrder.total}
+          onClose={() => setValueOrder(null)}
+          onSuccess={() => {
+            setValueOrder(null);
+            toast.success("Valor do cupom registrado com sucesso!");
           }}
         />
       )}
