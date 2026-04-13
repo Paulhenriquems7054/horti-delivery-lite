@@ -18,13 +18,13 @@ export function WeightPickerModal({ product, onClose, onConfirm }: Props) {
   const pricePerKg = product?.price_per_kg ?? product?.price ?? 0;
   const total = weight * pricePerKg;
 
-  if (!product) return null;
-
   useEffect(() => {
     if (!product) return;
     setWeight(product.min_weight ?? 0.25);
     setCustomWeight("");
   }, [product]);
+
+  if (!product) return null;
 
   const handleStep = (dir: 1 | -1) => {
     setWeight(prev => {
