@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useDeliveryZones, useManageDeliveryZone } from "@/hooks/useDeliveryZones";
 import { useMyStore } from "@/hooks/useStores";
 import { Button } from "@/components/ui/button";

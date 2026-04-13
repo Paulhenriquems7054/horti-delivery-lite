@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMyStore, useCreateStore, useUpdateStore, useDeleteStore, Store } from "@/hooks/useStores";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Store, ArrowLeft } from "lucide-react";
+import { Plus, Pencil, Trash2, Store as StoreIcon, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -109,7 +109,7 @@ export default function AdminStores() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} className="text-white hover:bg-white/20">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <Store className="h-6 w-6 text-white" />
+          <StoreIcon className="h-6 w-6 text-white" />
           <h1 className="text-lg font-extrabold text-white">Gerenciar Lojas</h1>
         </div>
       </header>
@@ -203,7 +203,7 @@ export default function AdminStores() {
                   <img src={store.logo_url} alt={store.name} className="h-12 w-12 rounded-lg object-cover" />
                 ) : (
                   <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Store className="h-6 w-6 text-primary" />
+                    <StoreIcon className="h-6 w-6 text-primary" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
