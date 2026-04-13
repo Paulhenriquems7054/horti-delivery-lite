@@ -1032,18 +1032,6 @@ export default function AdminBasket() {
                                   </div>
                                   <div className="flex items-center gap-1 shrink-0">
                                     <button
-                                      onClick={() => addToBasketMutation.mutate(product.id)}
-                                      disabled={addToBasketMutation.isPending}
-                                      className="h-7 w-7 bg-primary text-white rounded-lg flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
-                                      title="Adicionar à cesta"
-                                    >
-                                      {addToBasketMutation.isPending ? (
-                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                      ) : (
-                                        <Plus className="h-3 w-3" />
-                                      )}
-                                    </button>
-                                    <button
                                       onClick={() => setEditingProduct({ 
                                         id: product.id, 
                                         name: product.name, 
