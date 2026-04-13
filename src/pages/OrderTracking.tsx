@@ -73,7 +73,7 @@ function StatusTimeline({ status }: { status: string }) {
   );
 }
 
-function useRealtimeCustomerOrders(phone: string) {
+function useRealtimeCustomerOrders(phone: string, storeId?: string) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -82,36 +82,42 @@ function useRealtimeCustomerOrders(phone: string) {
 
     setLoading(true);
 
-    // Busca inicial
-    supabase
+    // Busca inicial — filtra por loja se disponível
+    let query = supabase
       .from("orders")
       .select("*")
       .eq("phone", phone)
-      .order("created_at", { ascending: false })
-      .then(({ data, error }) => {
+      .order("created_at", { ascending: false });
+
+    if (storeId) query = query.eq("store_id", storeId);
+
+    query.then(({ data, error }) => {
         if (!error && data) setOrders(data as Order[]);
+        else if (error) console.error("Erro ao buscar pedidos:", error);
         setLoading(false);
       });
 
     // Realtime — atualiza status em tempo real
     const channel = supabase
-      .channel(`customer-orders-${phone}`)
+      .channel(`customer-orders-${phone}-${storeId || 'all'}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "orders", filter: `phone=eq.${phone}` },
         (payload) => {
+          const updated = payload.new as Order;
+          // Se tem storeId, ignora pedidos de outras lojas
+          if (storeId && (updated as any).store_id && (updated as any).store_id !== storeId) return;
           setOrders(prev =>
-            prev.map(o => o.id === payload.new.id ? { ...o, ...(payload.new as Order) } : o)
+            prev.map(o => o.id === updated.id ? { ...o, ...updated } : o)
           );
-          const newStatus = (payload.new as Order).status;
-          const step = STATUS_STEPS.find(s => s.key === newStatus);
+          const step = STATUS_STEPS.find(s => s.key === updated.status);
           if (step) toast.success(`Pedido atualizado: ${step.label}!`);
         }
       )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [phone]);
+  }, [phone, storeId]);
 
   return { orders, loading };
 }
@@ -123,7 +129,7 @@ export default function OrderTracking() {
   
   const [phone, setPhone] = useState("");
   const [searchPhone, setSearchPhone] = useState("");
-  const { orders, loading } = useRealtimeCustomerOrders(searchPhone);
+  const { orders, loading } = useRealtimeCustomerOrders(searchPhone, store?.id);
 
   const handleSearch = () => {
     const clean = phone.replace(/\D/g, "");
