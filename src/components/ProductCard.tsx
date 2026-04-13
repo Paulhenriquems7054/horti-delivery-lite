@@ -1,5 +1,6 @@
-import { Scale } from "lucide-react";
+import { Scale, Info } from "lucide-react";
 import type { BasketProduct } from "@/hooks/useActiveBasket";
+import { calculateUnitPriceEstimate, formatCurrency, formatPriceRange } from "@/utils/priceEstimation";
 
 const EMOJI_MAP: Record<string, string> = {
   banana: "🍌", tomate: "🍅", alface: "🥬", batata: "🥔",
@@ -48,6 +49,8 @@ export function ProductCard({
   const pricePerKg = product.price_per_kg ?? product.price;
   const pricePerUnit = (product as any).price_per_unit ?? product.price;
   const inCart = isWeight ? (cartWeight ?? 0) > 0 : cartQty > 0;
+  
+  const unitEstimate = !isWeight ? calculateUnitPriceEstimate(product, cartQty || 1) : null;
 
   return (
     <div className={`flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card border transition-all ${inCart ? "border-primary/40 bg-emerald-50/30 dark:bg-emerald-950/20" : "border-border/60"}`}>
@@ -66,9 +69,31 @@ export function ProductCard({
         
         {/* Preço por kg - SEMPRE visível */}
         <p className="text-sm mt-0.5">
-          <span className="text-primary font-bold">R$ {pricePerKg.toFixed(2).replace(".", ",")}</span>
+          <span className="text-primary font-bold">{formatCurrency(pricePerKg)}</span>
           <span className="text-xs text-muted-foreground ml-1">/ kg</span>
         </p>
+        
+        {/* Estimativa para produtos por unidade (quando não está no modo peso) */}
+        {!isWeight && unitEstimate && (
+          <div className="mt-0.5">
+            {unitEstimate.hasEstimate ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                <Scale className="h-3 w-3" />
+                Estimativa: {formatPriceRange(unitEstimate.min, unitEstimate.max)}
+                {product.average_weight && (
+                  <span className="text-muted-foreground font-normal">
+                    (~{product.average_weight < 1 ? `${Math.round(product.average_weight * 1000)}g` : `${product.average_weight}kg`}/un)
+                  </span>
+                )}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Info className="h-3 w-3" />
+                Valor após pesagem
+              </p>
+            )}
+          </div>
+        )}
         
         {/* Toggle de modo (quando sell_by = 'both') */}
         {isBoth && onToggleMode && (
@@ -96,11 +121,18 @@ export function ProductCard({
           </div>
         )}
         
-        {/* Informação do carrinho (apenas quando em modo peso e tem item) */}
+        {/* Informação do carrinho - modo peso */}
         {isWeight && inCart && cartWeight && (
           <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
             {cartWeight < 1 ? `${Math.round(cartWeight * 1000)}g` : `${cartWeight.toFixed(2)}kg`}
-            {" "}≈ R$ {(cartWeight * pricePerKg).toFixed(2).replace(".", ",")}
+            {" "}≈ {formatCurrency(cartWeight * pricePerKg)}
+          </p>
+        )}
+        
+        {/* Informação do carrinho - modo unidade com estimativa */}
+        {!isWeight && inCart && cartQty > 0 && unitEstimate?.hasEstimate && (
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
+            {cartQty} un ≈ {formatCurrency(unitEstimate.estimated)}
           </p>
         )}
       </div>

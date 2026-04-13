@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
-import { Loader2, ArrowLeft, User, Phone, MapPin, Truck, Ticket, X, CreditCard, Banknote, Wallet } from "lucide-react";
+import { Loader2, ArrowLeft, User, Phone, MapPin, Truck, Ticket, X, CreditCard, Banknote, Wallet, Scale, AlertTriangle } from "lucide-react";
 import { useDeliveryZones, type DeliveryZone } from "@/hooks/useDeliveryZones";
 import { useValidateCoupon } from "@/hooks/useCoupons";
 import { toast } from "sonner";
+import { CartEstimateWarning } from "@/components/CartEstimateWarning";
 
 interface Props {
   loading: boolean;
   basketName: string;
   basketPrice: number;
   storeId?: string;
+  estimatedTotal?: number;
+  hasUnitItems?: boolean;
+  itemsWithoutEstimate?: number;
   onSubmit: (data: { 
     customer_name: string; 
     phone: string; 
@@ -30,7 +34,17 @@ function formatPhone(value: string) {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
-export function CheckoutForm({ loading, basketName, basketPrice, storeId, onSubmit, onBack }: Props) {
+export function CheckoutForm({ 
+  loading, 
+  basketName, 
+  basketPrice, 
+  storeId, 
+  estimatedTotal,
+  hasUnitItems = false,
+  itemsWithoutEstimate = 0,
+  onSubmit, 
+  onBack 
+}: Props) {
   const { data: zones } = useDeliveryZones(storeId);
   const validateCoupon = useValidateCoupon();
   
@@ -166,10 +180,25 @@ export function CheckoutForm({ loading, basketName, basketPrice, storeId, onSubm
       </div>
 
       <div className="rounded-2xl gradient-card border border-primary/20 p-4 mb-6 flex flex-col gap-1">
+        {/* Subtotal - diferencia entre confirmado e estimado */}
         <div className="flex justify-between text-sm font-semibold text-muted-foreground">
-          <span>Subtotal:</span>
+          <span className="flex items-center gap-1">
+            Subtotal (confirmado):
+          </span>
           <span>R$ {basketPrice.toFixed(2).replace(".", ",")}</span>
         </div>
+        
+        {/* Estimativa de itens por unidade */}
+        {estimatedTotal && estimatedTotal > basketPrice && (
+          <div className="flex justify-between text-sm font-semibold text-amber-600">
+            <span className="flex items-center gap-1">
+              <Scale className="h-3.5 w-3.5" />
+              Estimativa (por unidade):
+            </span>
+            <span>+ R$ {(estimatedTotal - basketPrice).toFixed(2).replace(".", ",")}</span>
+          </div>
+        )}
+        
         {discount > 0 && (
           <div className="flex justify-between text-sm font-semibold text-emerald-600">
             <span>Desconto ({appliedCoupon.code}):</span>
@@ -181,11 +210,31 @@ export function CheckoutForm({ loading, basketName, basketPrice, storeId, onSubm
           <span>+ R$ {deliveryFee.toFixed(2).replace(".", ",")}</span>
         </div>
         <div className="flex items-center justify-between pt-2 border-t border-primary/20">
-          <span className="text-base font-bold text-foreground">Total do pedido</span>
+          <div>
+            <span className="text-base font-bold text-foreground">
+              {hasUnitItems ? "Total estimado" : "Total do pedido"}
+            </span>
+            {hasUnitItems && (
+              <p className="text-[10px] text-muted-foreground">
+                Valor final após pesagem
+              </p>
+            )}
+          </div>
           <span className="text-2xl font-extrabold text-primary">
-            R$ {finalTotal.toFixed(2).replace(".", ",")}
+            R$ {(estimatedTotal ? Math.max(0, estimatedTotal - discount + deliveryFee) : finalTotal).toFixed(2).replace(".", ",")}
           </span>
         </div>
+        
+        {/* Aviso de variação para itens por unidade */}
+        {hasUnitItems && (
+          <div className="mt-3">
+            <CartEstimateWarning 
+              hasUnitItems={true}
+              itemsWithoutEstimate={itemsWithoutEstimate}
+              variant="warning"
+            />
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>

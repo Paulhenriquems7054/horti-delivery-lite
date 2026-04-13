@@ -7,11 +7,13 @@ import { ProductSearch } from "@/components/ProductSearch";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { WeightPickerModal } from "@/components/WeightPickerModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { CartEstimateWarning } from "@/components/CartEstimateWarning";
 import { ShoppingCart, CheckCircle2, Leaf, Package, Store } from "lucide-react";
 import { toast } from "sonner";
 import { useParams, useNavigate } from "react-router-dom";
 import { useStoreInfo } from "@/hooks/useStoreInfo";
 import type { BasketProduct } from "@/hooks/useActiveBasket";
+import { calculateCartEstimate, calculateUnitPriceEstimate, formatCurrency } from "@/utils/priceEstimation";
 
 type Step = "basket" | "checkout" | "confirmation";
 
@@ -63,23 +65,26 @@ export default function Index() {
     setWeightCart(p => { const n = { ...p }; delete n[productId]; return n; });
   };
 
-  // Calcula total APENAS de itens por peso (itens por unidade não têm preço definido)
-  const cartTotal = useMemo(() => {
-    if (!basket?.products) return 0;
-    return basket.products.reduce((acc, p) => {
-      const sellBy = p.sell_by || 'unit';
-      const mode = sellBy === 'both' ? (productMode[p.id] || 'unit') : sellBy;
-      
-      // Apenas itens por PESO têm valor calculado
-      if (mode === 'weight') {
-        const kg = weightCart[p.id] || 0;
-        return acc + kg * (p.price_per_kg ?? p.price);
-      }
-      
-      // Itens por UNIDADE não entram no total (serão pesados depois)
-      return acc;
-    }, 0);
+  // Calcula totais com estimativas para itens por unidade
+  const cartEstimates = useMemo(() => {
+    if (!basket?.products) {
+      return {
+        weightItemsTotal: 0,
+        unitItemsEstimate: 0,
+        unitItemsMin: 0,
+        unitItemsMax: 0,
+        totalEstimate: 0,
+        totalMin: 0,
+        totalMax: 0,
+        hasUnitEstimates: false,
+        unitItemsWithoutEstimate: 0,
+      };
+    }
+    return calculateCartEstimate(basket.products, cart, weightCart, productMode);
   }, [basket?.products, cart, weightCart, productMode]);
+
+  // Total confirmado (apenas itens por peso) - para compatibilidade
+  const cartTotal = cartEstimates.weightItemsTotal;
 
   // Contar itens por peso e por unidade separadamente
   const itemsByWeight = Object.keys(weightCart).length;
@@ -355,10 +360,21 @@ export default function Index() {
                   </p>
                   <h2 className="text-2xl font-extrabold text-foreground mt-1">Monte sua Cesta</h2>
                   
-                  {/* Valor calculado (apenas itens por peso) */}
-                  {cartTotal > 0 ? (
+                  {/* Total Estimado */}
+                  {cartEstimates.totalEstimate > 0 ? (
+                    <div className="mt-2">
+                      <p className="text-4xl font-extrabold text-primary">
+                        {formatCurrency(cartEstimates.totalEstimate)}
+                      </p>
+                      {cartEstimates.hasUnitEstimates && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Total estimado
+                        </p>
+                      )}
+                    </div>
+                  ) : cartTotal > 0 ? (
                     <p className="text-4xl font-extrabold text-primary mt-2">
-                      R$ {cartTotal.toFixed(2).replace(".", ",")}
+                      {formatCurrency(cartTotal)}
                     </p>
                   ) : (
                     <p className="text-4xl font-extrabold text-slate-400 mt-2">
@@ -372,23 +388,40 @@ export default function Index() {
                       {totalItems} item(s) selecionado(s) - {basket.products.length} no catálogo
                     </p>
                     
-                    {/* Itens por peso (com valor) */}
+                    {/* Itens por peso (com valor confirmado) */}
                     {itemsByWeight > 0 && (
                       <p className="text-xs text-emerald-600 font-semibold">
-                        ✓ {itemsByWeight} por peso: R$ {cartTotal.toFixed(2).replace(".", ",")}
+                        ✓ {itemsByWeight} por peso: {formatCurrency(cartEstimates.weightItemsTotal)}
                       </p>
                     )}
                     
-                    {/* Itens por unidade (aguardando pesagem) */}
+                    {/* Itens por unidade (com estimativa) */}
                     {itemsByUnit > 0 && (
                       <p className="text-xs text-amber-600 font-semibold">
-                        ⚖️ {itemsByUnit} por unidade: A pesar
+                        ⚖️ {itemsByUnit} por unidade: {
+                          cartEstimates.hasUnitEstimates 
+                            ? `Estimativa ${formatCurrency(cartEstimates.unitItemsEstimate)}`
+                            : cartEstimates.unitItemsWithoutEstimate > 0
+                              ? "Valor após pesagem"
+                              : "A pesar"
+                        }
                       </p>
                     )}
                   </div>
                 </div>
                 <div className="text-5xl mt-1">🧺</div>
               </div>
+              
+              {/* Aviso de variação de preço */}
+              {itemsByUnit > 0 && (
+                <div className="mt-4">
+                  <CartEstimateWarning 
+                    hasUnitItems={true} 
+                    itemsWithoutEstimate={cartEstimates.unitItemsWithoutEstimate}
+                    compact={true}
+                  />
+                </div>
+              )}
               
               {/* Prévia dos itens selecionados */}
               {totalItems > 0 && (
@@ -411,21 +444,27 @@ export default function Index() {
                       </div>
                     ))}
                     
-                    {/* Itens por unidade */}
+                    {/* Itens por unidade com estimativa */}
                     {basket.products.filter(p => {
                       const sellBy = p.sell_by || 'unit';
                       const mode = sellBy === 'both' ? (productMode[p.id] || 'unit') : sellBy;
                       return mode === 'unit' && (cart[p.id] || 0) > 0;
-                    }).map(p => (
-                      <div key={p.id} className="flex justify-between text-xs">
-                        <span className="text-foreground">
-                          {p.name} ({cart[p.id]} un)
-                        </span>
-                        <span className="font-bold text-amber-600">
-                          A pesar
-                        </span>
-                      </div>
-                    ))}
+                    }).map(p => {
+                      const estimate = calculateUnitPriceEstimate(p, cart[p.id]);
+                      return (
+                        <div key={p.id} className="flex justify-between text-xs">
+                          <span className="text-foreground">
+                            {p.name} ({cart[p.id]} un)
+                          </span>
+                          <span className="font-bold text-amber-600">
+                            {estimate.hasEstimate 
+                              ? `≈ ${formatCurrency(estimate.estimated)}`
+                              : "A pesar"
+                            }
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -496,6 +535,9 @@ export default function Index() {
               basketName={basket.name}
               basketPrice={cartTotal}
               storeId={store.id}
+              estimatedTotal={cartEstimates.totalEstimate}
+              hasUnitItems={itemsByUnit > 0}
+              itemsWithoutEstimate={cartEstimates.unitItemsWithoutEstimate}
               onBack={() => setStep("basket")}
               onSubmit={(data) => {
                 const selectedProducts = basket.products

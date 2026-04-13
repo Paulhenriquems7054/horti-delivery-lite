@@ -1,10 +1,11 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Leaf, Plus, Trash2, ArrowLeft, Loader2, Save, Truck, Package } from "lucide-react";
+import { Leaf, Plus, Trash2, ArrowLeft, Loader2, Save, Truck, Package, Scale } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useDeliveryZones, useManageDeliveryZone } from "@/hooks/useDeliveryZones";
+import { ProductWeightSettings } from "@/components/admin/ProductWeightSettings";
 
 export default function AdminBasket() {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ export default function AdminBasket() {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [showAllProducts, setShowAllProducts] = useState(false);
+  const [editingWeightProductId, setEditingWeightProductId] = useState<string | null>(null);
 
   const { data: basket, isLoading } = useQuery({
     queryKey: ["admin-active-basket"],
@@ -43,7 +45,7 @@ export default function AdminBasket() {
 
       const { data: items, error: iErr } = await supabase
         .from("basket_items")
-        .select("id, quantity, products(id, name, price, unit, in_stock, image_url)")
+        .select("id, quantity, products(id, name, price, unit, in_stock, image_url, price_per_kg, average_weight, weight_variance, sell_by)")
         .eq("basket_id", bData.id)
         .order("id");
 
@@ -683,6 +685,21 @@ export default function AdminBasket() {
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button 
+                          onClick={() => setEditingWeightProductId(
+                            editingWeightProductId === item.products.id ? null : item.products.id
+                          )}
+                          className={`h-9 w-9 rounded-lg flex items-center justify-center transition-colors border ${
+                            editingWeightProductId === item.products.id
+                              ? 'bg-amber-500 text-white border-amber-600'
+                              : item.products.average_weight
+                                ? 'bg-amber-100 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 hover:bg-amber-200 dark:hover:bg-amber-950/50'
+                                : 'bg-gray-50 dark:bg-gray-950/30 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-950/50'
+                          }`}
+                          title={item.products.average_weight ? `Peso médio: ${item.products.average_weight}kg` : "Configurar peso médio"}
+                        >
+                          <Scale className="h-4 w-4" />
+                        </button>
+                        <button 
                           onClick={() => setEditingItem({ 
                             id: item.id, 
                             name: item.products.name, 
@@ -711,6 +728,20 @@ export default function AdminBasket() {
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
+                    </div>
+                  )}
+                  
+                  {/* Configurações de Peso Médio */}
+                  {editingWeightProductId === item.products.id && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <ProductWeightSettings
+                        productId={item.products.id}
+                        productName={item.products.name}
+                        pricePerKg={item.products.price_per_kg || item.products.price}
+                        currentAverageWeight={item.products.average_weight}
+                        currentWeightVariance={item.products.weight_variance}
+                        onClose={() => setEditingWeightProductId(null)}
+                      />
                     </div>
                   )}
                 </div>
