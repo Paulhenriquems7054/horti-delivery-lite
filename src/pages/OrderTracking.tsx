@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Package, MapPin, Clock, CheckCircle2, ChefHat, Bike, Loader2, Leaf } from "lucide-react";
+import { Search, Package, MapPin, Clock, CheckCircle2, ChefHat, Bike, Loader2, Leaf, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -136,37 +136,41 @@ export default function OrderTracking() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="gradient-hero px-4 py-5 shadow-md">
-        <div className="mx-auto max-w-2xl">
-          <div className="flex items-center gap-3 mb-2">
-            {store && (
-              <>
-                <div className="h-10 w-10 rounded-xl bg-card/20 flex items-center justify-center overflow-hidden p-1.5">
-                  <img 
-                    src="/play_store_512.png" 
-                    alt="Logo" 
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <div>
-                  <h1 className="text-base font-extrabold text-white leading-tight">
-                    {store.name}
-                  </h1>
-                  <p className="text-xs text-white/75">Rastreamento de Pedidos</p>
-                </div>
-              </>
-            )}
-            {!store && (
-              <>
-                <h1 className="text-xl font-extrabold text-white">Rastrear Pedido</h1>
-              </>
-            )}
-          </div>
-          <p className="text-sm text-white/90 mt-1">Acompanhe sua entrega em tempo real 📦</p>
+      <header className="gradient-hero px-4 py-5 shadow-md sticky top-0 z-20">
+        <div className="mx-auto max-w-2xl flex items-center gap-3">
+          <button 
+            onClick={() => slug ? navigate(`/${slug}`) : navigate(-1)} 
+            className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          {store && (
+            <>
+              <div className="h-10 w-10 rounded-xl bg-card/20 flex items-center justify-center overflow-hidden p-1.5">
+                <img 
+                  src="/play_store_512.png" 
+                  alt="Logo" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="flex-1">
+                <h1 className="text-base font-extrabold text-white leading-tight">
+                  {store.name}
+                </h1>
+                <p className="text-xs text-white/75">Rastreamento de Pedidos</p>
+              </div>
+            </>
+          )}
+          {!store && (
+            <div>
+              <h1 className="text-xl font-extrabold text-white">Rastrear Pedido</h1>
+              <p className="text-xs text-white/75">Acompanhe sua entrega em tempo real 📦</p>
+            </div>
+          )}
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-6">
+      <main className="mx-auto max-w-2xl px-4 py-6 pb-20">
         {/* Busca */}
         <div className="bg-card rounded-2xl p-5 shadow-sm border border-border mb-6">
           <p className="text-sm font-bold text-foreground mb-3">Digite o telefone usado no pedido</p>
