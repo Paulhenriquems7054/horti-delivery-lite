@@ -52,7 +52,7 @@ export function ProductWeightSettings({
       toast.success("Configurações de peso salvas!");
       queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] });
       queryClient.invalidateQueries({ queryKey: ["active-basket"] });
-      queryClient.invalidateQueries({ queryKey: ["all-products"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-store-products"] });
       onClose?.();
     },
     onError: (err: any) => {

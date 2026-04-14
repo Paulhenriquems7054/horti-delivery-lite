@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Leaf, Plus, Trash2, ArrowLeft, Loader2, Save, Truck, Package, Scale, Search } from "lucide-react";
@@ -13,6 +13,8 @@ export default function AdminBasket() {
   const queryClient = useQueryClient();
   const { store: tenantStore, isLoading: isTenantLoading } = useTenant();
   const tenantStoreId = tenantStore?.id;
+
+  const STORE_PRODUCTS_KEY = ["admin-store-products", tenantStoreId] as const;
   
   const [newProductName, setNewProductName] = useState("");
   const [newProductPrice, setNewProductPrice] = useState("");
@@ -50,12 +52,15 @@ export default function AdminBasket() {
     return urlData.publicUrl;
   };
 
-  const { data: basket, isLoading } = useQuery({
-    queryKey: ["admin-active-basket"],
+  const { data: basket, isLoading: isBasketLoading } = useQuery({
+    queryKey: ["admin-active-basket", tenantStoreId],
     queryFn: async () => {
+      if (!tenantStoreId) return null;
+
       const { data: bData, error: bErr } = await supabase
         .from("baskets")
         .select("*")
+        .eq("store_id", tenantStoreId)
         .eq("active", true)
         .limit(1)
         .maybeSingle();
@@ -76,17 +81,33 @@ export default function AdminBasket() {
         items: items || [],
       };
     },
+    enabled: !!tenantStoreId,
   });
 
-  const allProducts = useMemo(
-    () => (basket?.items?.map((item: any) => item.products) || [])
-      .filter((product: any) => product && product.active !== false),
-    [basket?.items]
-  );
+  /** Mesma origem que o cliente em useActiveBasket: todos os produtos ativos da loja */
+  const { data: allProducts = [], isLoading: isStoreProductsLoading } = useQuery({
+    queryKey: STORE_PRODUCTS_KEY,
+    queryFn: async () => {
+      if (!tenantStoreId) return [];
+
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("store_id", tenantStoreId)
+        .eq("active", true)
+        .order("name");
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!tenantStoreId && showAllProducts,
+  });
 
   const filteredProducts = allProducts.filter((product: any) =>
     product.name?.toLowerCase().includes(productFilter.toLowerCase())
   );
+
+  const isLoading = isTenantLoading || isBasketLoading;
 
   const addToBasketMutation = useMutation({
     mutationFn: async (productId: string) => {
@@ -102,10 +123,9 @@ export default function AdminBasket() {
     onSuccess: () => {
       toast.success("Produto adicionado à cesta!");
       queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] });
-      if (basket?.id) {
-        queryClient.invalidateQueries({ queryKey: ["all-products", basket.id, tenantStoreId] });
+      if (tenantStoreId) {
+        queryClient.invalidateQueries({ queryKey: ["admin-store-products", tenantStoreId] });
       }
-      queryClient.invalidateQueries({ queryKey: ["all-products"] });
     },
     onError: (err: any) => toast.error(err.message)
   });
@@ -126,8 +146,8 @@ export default function AdminBasket() {
     onSuccess: () => {
       toast.success("Cesta atualizada com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] });
-      if (basket?.id) {
-        queryClient.invalidateQueries({ queryKey: ["all-products", basket.id, tenantStoreId] });
+      if (tenantStoreId) {
+        queryClient.invalidateQueries({ queryKey: ["admin-store-products", tenantStoreId] });
       }
     },
     onError: (err: any) => toast.error("Erro ao atualizar a cesta: " + err.message)
@@ -216,9 +236,9 @@ export default function AdminBasket() {
       setProductFilter("");
       setShowAllProducts(true);
       queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] });
-      if (basket?.id) {
-        queryClient.invalidateQueries({ queryKey: ["all-products", basket.id, tenantStoreId] });
-        queryClient.setQueryData(["all-products", basket.id, tenantStoreId], (prev: any) => {
+      if (tenantStoreId) {
+        queryClient.invalidateQueries({ queryKey: ["admin-store-products", tenantStoreId] });
+        queryClient.setQueryData(["admin-store-products", tenantStoreId], (prev: any) => {
           if (!createdProduct) return prev;
           const prevList = Array.isArray(prev) ? prev : [];
           if (prevList.some((p: any) => p.id === createdProduct.id)) return prevList;
@@ -276,6 +296,9 @@ export default function AdminBasket() {
     onSuccess: () => {
       toast.success("Mercadorias importadas para a cesta com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] });
+      if (tenantStoreId) {
+        queryClient.invalidateQueries({ queryKey: ["admin-store-products", tenantStoreId] });
+      }
     },
     onError: (err: any) => toast.error("Erro na importação: " + err.message)
   });
@@ -317,6 +340,9 @@ export default function AdminBasket() {
       toast.success("Item atualizado!");
       setEditingItem(null);
       queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] });
+      if (tenantStoreId) {
+        queryClient.invalidateQueries({ queryKey: ["admin-store-products", tenantStoreId] });
+      }
     },
     onError: (err: any) => toast.error("Erro ao salvar: " + err.message)
   });
@@ -329,8 +355,8 @@ export default function AdminBasket() {
     onSuccess: () => {
       toast.success("Estoque atualizado!");
       queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] });
-      if (basket?.id) {
-        queryClient.invalidateQueries({ queryKey: ["all-products", basket.id, tenantStoreId] });
+      if (tenantStoreId) {
+        queryClient.invalidateQueries({ queryKey: ["admin-store-products", tenantStoreId] });
       }
     }
   });
@@ -348,9 +374,9 @@ export default function AdminBasket() {
     },
     onSuccess: ({ productId, imageUrl }) => {
       queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] });
-      if (basket?.id) {
-        queryClient.invalidateQueries({ queryKey: ["all-products", basket.id, tenantStoreId] });
-        queryClient.setQueryData(["all-products", basket.id, tenantStoreId], (prev: any) => {
+      if (tenantStoreId) {
+        queryClient.invalidateQueries({ queryKey: ["admin-store-products", tenantStoreId] });
+        queryClient.setQueryData(["admin-store-products", tenantStoreId], (prev: any) => {
           if (!prev || !Array.isArray(prev)) return prev;
           return prev.map((p: any) =>
             p.id === productId ? { ...p, image_url: imageUrl } : p
@@ -378,9 +404,9 @@ export default function AdminBasket() {
       toast.success("Produto atualizado!");
       setEditingProduct(null);
       queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] });
-      if (basket?.id) {
-        queryClient.invalidateQueries({ queryKey: ["all-products", basket.id, tenantStoreId] });
-        queryClient.setQueryData(["all-products", basket.id, tenantStoreId], (prev: any) => {
+      if (tenantStoreId) {
+        queryClient.invalidateQueries({ queryKey: ["admin-store-products", tenantStoreId] });
+        queryClient.setQueryData(["admin-store-products", tenantStoreId], (prev: any) => {
           if (!prev || !Array.isArray(prev)) return prev;
           return prev.map((p: any) =>
             p.id === productId ? { ...p, image_url: imageUrl, name, price, unit } : p
@@ -415,9 +441,9 @@ export default function AdminBasket() {
       queryClient.invalidateQueries({ queryKey: ["admin-active-basket"] });
       queryClient.invalidateQueries({ queryKey: ["active-basket"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      if (basket?.id) {
-        queryClient.invalidateQueries({ queryKey: ["all-products", basket.id, tenantStoreId] });
-        queryClient.setQueryData(["all-products", basket.id, tenantStoreId], (prev: any) => {
+      if (tenantStoreId) {
+        queryClient.invalidateQueries({ queryKey: ["admin-store-products", tenantStoreId] });
+        queryClient.setQueryData(["admin-store-products", tenantStoreId], (prev: any) => {
           if (!Array.isArray(prev)) return prev;
           return prev.filter((p: any) => p.id !== productId);
         });
@@ -918,19 +944,26 @@ export default function AdminBasket() {
                   className="w-full h-10 pl-9 pr-3 border border-border rounded-lg text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
-              {allProducts.length === 0 && (
+              {isStoreProductsLoading && (
+                <div className="text-center py-4">
+                  <Loader2 className="h-6 w-6 text-primary animate-spin mx-auto" />
+                  <p className="text-xs text-muted-foreground mt-2">Carregando produtos...</p>
+                </div>
+              )}
+
+              {!isStoreProductsLoading && allProducts.length === 0 && (
                 <p className="text-center text-sm py-4 text-muted-foreground">
                   Nenhum produto cadastrado na loja ainda.
                 </p>
               )}
 
-              {allProducts.length > 0 && filteredProducts.length === 0 && (
+              {!isStoreProductsLoading && allProducts.length > 0 && filteredProducts.length === 0 && (
                 <p className="text-center text-sm py-4 text-muted-foreground">
                   Nenhum produto encontrado para esse filtro.
                 </p>
               )}
 
-              {allProducts.length > 0 && (
+              {!isStoreProductsLoading && allProducts.length > 0 && (
                 <div className="space-y-2">
                   {filteredProducts.map((product: any) => {
                     const isEditingThisProduct = editingProduct?.id === product.id;
