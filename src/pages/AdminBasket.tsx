@@ -198,6 +198,10 @@ export default function AdminBasket() {
       let finalImageUrl = newProductImageUrl;
       const shouldUploadImage = !!newProductImageFile;
 
+      const defaultAverageWeight = 0.3;
+      const defaultWeightVariance = 0.15;
+      const normalizedPricePerKg = newProductUnit === "un" ? priceVal : undefined;
+
       const { data: prodData, error: prodErr } = await supabase
         .from("products")
         .insert([{ 
@@ -207,6 +211,9 @@ export default function AdminBasket() {
            image_url: shouldUploadImage ? null : finalImageUrl,
            active: true,
            store_id: effectiveStoreId,
+           average_weight: defaultAverageWeight,
+           weight_variance: defaultWeightVariance,
+           price_per_kg: normalizedPricePerKg,
         }])
         .select()
         .single();
@@ -273,7 +280,15 @@ export default function AdminBasket() {
       if (basketData?.store_id !== tenantStoreId) {
         await supabase.from("baskets").update({ store_id: tenantStoreId }).eq("id", basket.id);
       }
-      const itemsWithStore = items.map(i => ({ ...i, store_id: effectiveStoreId }));
+      const defaultAverageWeight = 0.3;
+      const defaultWeightVariance = 0.15;
+      const itemsWithStore = items.map(i => ({
+        ...i,
+        store_id: effectiveStoreId,
+        average_weight: defaultAverageWeight,
+        weight_variance: defaultWeightVariance,
+        price_per_kg: i.unit === "un" ? i.price : undefined,
+      }));
       
       const { data: prods, error: prodErr } = await supabase
         .from("products")

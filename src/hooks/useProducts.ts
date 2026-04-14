@@ -65,9 +65,18 @@ export function useCreateProduct() {
         payload = { ...payload, store_id: store.id };
       }
 
+      const defaultAverageWeight = 0.3;
+      const defaultWeightVariance = 0.15;
+      const normalizedInput = {
+        ...payload,
+        average_weight: payload.average_weight ?? defaultAverageWeight,
+        weight_variance: payload.weight_variance ?? defaultWeightVariance,
+        price_per_kg: payload.price_per_kg ?? (payload.unit === "un" ? payload.price : undefined),
+      };
+
       const { data, error } = await supabase
         .from("products")
-        .insert(payload)
+        .insert(normalizedInput)
         .select()
         .single();
       if (error) throw error;
