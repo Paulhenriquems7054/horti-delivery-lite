@@ -45,6 +45,7 @@ export function ProductCard({
   const isBoth = sellBy === 'both';
   const currentMode: 'unit' | 'weight' = isBoth ? (selectedMode || 'unit') : (sellBy === 'weight' ? 'weight' : 'unit');
   const isWeight = currentMode === 'weight';
+  const isAvailable = product.in_stock !== false;
   
   const pricePerKg = product.price_per_kg ?? product.price;
   const pricePerUnit = (product as any).price_per_unit ?? product.price;
@@ -53,7 +54,7 @@ export function ProductCard({
   const unitEstimate = !isWeight ? calculateUnitPriceEstimate(product, cartQty || 1) : null;
 
   return (
-    <div className={`flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card border transition-all ${inCart ? "border-primary/40 bg-emerald-50/30 dark:bg-emerald-950/20" : "border-border/60"}`}>
+    <div className={`flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card border transition-all ${inCart ? "border-primary/40 bg-emerald-50/30 dark:bg-emerald-950/20" : "border-border/60"} ${!isAvailable ? "opacity-60" : ""}`}>
       {/* Imagem / Emoji */}
       <div className="flex-shrink-0 h-14 w-14 rounded-xl gradient-card flex items-center justify-center overflow-hidden">
         {product.image_url ? (
@@ -65,7 +66,14 @@ export function ProductCard({
 
       {/* Infos */}
       <div className="flex-1 min-w-0">
-        <p className="font-bold text-foreground truncate">{product.name}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="font-bold text-foreground truncate">{product.name}</p>
+          {!isAvailable && (
+            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-red-100 text-red-700">
+              Indisponível
+            </span>
+          )}
+        </div>
         
         {/* Preço por kg - SEMPRE visível */}
         <p className="text-sm mt-0.5">
@@ -100,6 +108,7 @@ export function ProductCard({
           <div className="flex gap-1 mt-1">
             <button
               onClick={onToggleMode}
+              disabled={!isAvailable}
               className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-colors ${
                 currentMode === 'unit' 
                   ? 'bg-primary text-white' 
@@ -110,6 +119,7 @@ export function ProductCard({
             </button>
             <button
               onClick={onToggleMode}
+              disabled={!isAvailable}
               className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-colors ${
                 currentMode === 'weight' 
                   ? 'bg-primary text-white' 
@@ -143,6 +153,7 @@ export function ProductCard({
           /* Modo peso — sempre mostra botão que abre modal */
           <button
             onClick={onSelectWeight}
+            disabled={!isAvailable}
             className={`h-9 px-3 rounded-full text-sm font-extrabold flex items-center gap-1.5 transition-colors ${
               inCart
                 ? "bg-primary text-white hover:bg-primary/90"
@@ -150,19 +161,19 @@ export function ProductCard({
             }`}
           >
             <Scale className="h-3.5 w-3.5" />
-            {inCart ? "Alterar" : "Selecionar"}
+            {!isAvailable ? "Indisponível" : inCart ? "Alterar" : "Selecionar"}
           </button>
         ) : (
           /* Modo unitário */
           cartQty > 0 ? (
             <div className="flex items-center gap-3 bg-accent rounded-full p-1 border border-primary/20">
-              <button onClick={onRemove} className="h-7 w-7 rounded-full bg-card text-primary font-bold flex items-center justify-center shadow-sm hover:bg-muted">-</button>
+              <button onClick={onRemove} disabled={!isAvailable} className="h-7 w-7 rounded-full bg-card text-primary font-bold flex items-center justify-center shadow-sm hover:bg-muted">-</button>
               <span className="text-sm font-extrabold text-primary w-3 text-center">{cartQty}</span>
-              <button onClick={onAdd} className="h-7 w-7 rounded-full bg-primary text-white font-bold flex items-center justify-center shadow-sm hover:bg-primary/90">+</button>
+              <button onClick={onAdd} disabled={!isAvailable} className="h-7 w-7 rounded-full bg-primary text-white font-bold flex items-center justify-center shadow-sm hover:bg-primary/90">+</button>
             </div>
           ) : (
-            <button onClick={onAdd} className="h-9 px-4 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-sm font-extrabold hover:bg-emerald-100 dark:hover:bg-emerald-950/50 transition-colors">
-              Adicionar
+            <button onClick={onAdd} disabled={!isAvailable} className="h-9 px-4 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-sm font-extrabold hover:bg-emerald-100 dark:hover:bg-emerald-950/50 transition-colors">
+              {isAvailable ? "Adicionar" : "Indisponível"}
             </button>
           )
         )}

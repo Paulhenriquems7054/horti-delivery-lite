@@ -48,9 +48,26 @@ export function useCreateProduct() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: Omit<Product, "id">) => {
+      let payload = { ...input };
+
+      // Garantir store_id para satisfazer RLS no insert
+      if (!payload.store_id) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Usuário não autenticado");
+
+        const { data: store, error: storeError } = await (supabase as any)
+          .from("stores")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (storeError) throw storeError;
+        if (!store?.id) throw new Error("Loja não encontrada para o usuário");
+        payload = { ...payload, store_id: store.id };
+      }
+
       const { data, error } = await supabase
         .from("products")
-        .insert(input)
+        .insert(payload)
         .select()
         .single();
       if (error) throw error;
