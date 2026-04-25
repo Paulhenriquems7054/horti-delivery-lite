@@ -1,5 +1,14 @@
 import type { BasketProduct } from "@/hooks/useActiveBasket";
 
+/** Venda com preço unitário fechado (R$ do cadastro), não por kg+peso estimado. */
+export function sellsByUnitFixedPrice(
+  product: { sell_by?: string; unit?: string | null }
+): boolean {
+  if (product.sell_by === "unit") return true;
+  const u = (product.unit || "").toLowerCase();
+  return u === "un" || u === "und" || u === "unidade";
+}
+
 export interface PriceEstimate {
   estimated: number;
   min: number;
@@ -11,6 +20,15 @@ export function calculateUnitPriceEstimate(
   product: BasketProduct,
   quantity: number = 1
 ): PriceEstimate {
+  if (sellsByUnitFixedPrice(product)) {
+    return {
+      estimated: 0,
+      min: 0,
+      max: 0,
+      hasEstimate: false,
+    };
+  }
+
   const pricePerKg = product.price_per_kg ?? product.price;
   const averageWeight = product.average_weight;
   const variance = product.weight_variance ?? 0.15;
@@ -50,6 +68,8 @@ export function calculateCartEstimate(
   totalMin: number;
   totalMax: number;
   hasUnitEstimates: boolean;
+  /** Só itens cujo valor por unidade vem de peso médio (não preço fixo) */
+  hasUnitWeightBasedEstimate: boolean;
   unitItemsWithoutEstimate: number;
 } {
   let weightItemsTotal = 0;
@@ -57,6 +77,7 @@ export function calculateCartEstimate(
   let unitItemsMin = 0;
   let unitItemsMax = 0;
   let unitItemsWithoutEstimate = 0;
+  let hasUnitWeightBasedEstimate = false;
 
   products.forEach((p) => {
     const sellBy = p.sell_by || "unit";
@@ -68,13 +89,22 @@ export function calculateCartEstimate(
     } else {
       const qty = cart[p.id] || 0;
       if (qty > 0) {
-        const estimate = calculateUnitPriceEstimate(p, qty);
-        if (estimate.hasEstimate) {
-          unitItemsEstimate += estimate.estimated;
-          unitItemsMin += estimate.min;
-          unitItemsMax += estimate.max;
+        if (sellsByUnitFixedPrice(p)) {
+          const unitPrice = p.price_per_unit ?? p.price;
+          const line = qty * unitPrice;
+          unitItemsEstimate += line;
+          unitItemsMin += line;
+          unitItemsMax += line;
         } else {
-          unitItemsWithoutEstimate += qty;
+          const estimate = calculateUnitPriceEstimate(p, qty);
+          if (estimate.hasEstimate) {
+            hasUnitWeightBasedEstimate = true;
+            unitItemsEstimate += estimate.estimated;
+            unitItemsMin += estimate.min;
+            unitItemsMax += estimate.max;
+          } else {
+            unitItemsWithoutEstimate += qty;
+          }
         }
       }
     }
@@ -89,6 +119,7 @@ export function calculateCartEstimate(
     totalMin: weightItemsTotal + unitItemsMin,
     totalMax: weightItemsTotal + unitItemsMax,
     hasUnitEstimates: unitItemsEstimate > 0,
+    hasUnitWeightBasedEstimate,
     unitItemsWithoutEstimate,
   };
 }

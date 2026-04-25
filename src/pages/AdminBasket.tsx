@@ -180,7 +180,8 @@ export default function AdminBasket() {
 
       const defaultAverageWeight = 0.3;
       const defaultWeightVariance = 0.15;
-      const normalizedPricePerKg = priceVal;
+      const sellBy = newProductUnit === "un" ? "unit" : "weight";
+      const normalizedPricePerKg = sellBy === "unit" ? null : priceVal;
 
       const { data: prodData, error: prodErr } = await supabase
         .from("products")
@@ -191,8 +192,8 @@ export default function AdminBasket() {
           image_url: shouldUploadImage ? null : finalImageUrl,
           active: true,
           store_id: effectiveStoreId,
-          sell_by: "both",
-          average_weight: defaultAverageWeight,
+          sell_by: sellBy,
+          average_weight: sellBy === "unit" ? null : defaultAverageWeight,
           weight_variance: defaultWeightVariance,
           price_per_kg: normalizedPricePerKg,
         }])
@@ -263,14 +264,17 @@ export default function AdminBasket() {
       }
       const defaultAverageWeight = 0.3;
       const defaultWeightVariance = 0.15;
-      const itemsWithStore = items.map((i) => ({
-        ...i,
-        store_id: effectiveStoreId,
-        sell_by: "both",
-        average_weight: defaultAverageWeight,
-        weight_variance: defaultWeightVariance,
-        price_per_kg: i.price,
-      }));
+      const itemsWithStore = items.map((i) => {
+        const sellBy = i.unit === "un" ? "unit" : "weight";
+        return {
+          ...i,
+          store_id: effectiveStoreId,
+          sell_by: sellBy,
+          average_weight: sellBy === "unit" ? null : defaultAverageWeight,
+          weight_variance: defaultWeightVariance,
+          price_per_kg: sellBy === "unit" ? null : i.price,
+        };
+      });
       
       const { data: prods, error: prodErr } = await supabase
         .from("products")
@@ -323,9 +327,18 @@ export default function AdminBasket() {
       }
 
       // 1. Atualizar produto
+      const sellBy = data.unit === "un" ? "unit" : "weight";
       const { error: prodErr } = await supabase
         .from("products")
-        .update({ name: data.name, price: data.price, unit: data.unit, image_url: imageUrl })
+        .update({
+          name: data.name,
+          price: data.price,
+          unit: data.unit,
+          image_url: imageUrl,
+          sell_by: sellBy,
+          price_per_kg: sellBy === "unit" ? null : data.price,
+          ...(sellBy === "unit" ? { average_weight: null } : {}),
+        })
         .eq("id", data.productId);
       if (prodErr) throw prodErr;
 
@@ -393,9 +406,18 @@ export default function AdminBasket() {
         imageUrl = await uploadProductImageFile(data.productId, data.image_file);
       }
 
+      const sellBy = data.unit === "un" ? "unit" : "weight";
       const { data: updated, error } = await supabase
         .from("products")
-        .update({ name: data.name, price: data.price, unit: data.unit, image_url: imageUrl })
+        .update({
+          name: data.name,
+          price: data.price,
+          unit: data.unit,
+          image_url: imageUrl,
+          sell_by: sellBy,
+          price_per_kg: sellBy === "unit" ? null : data.price,
+          ...(sellBy === "unit" ? { average_weight: null } : {}),
+        })
         .eq("id", data.productId);
       if (error) throw error;
       return { productId: data.productId, imageUrl, name: data.name, price: data.price, unit: data.unit, updated };

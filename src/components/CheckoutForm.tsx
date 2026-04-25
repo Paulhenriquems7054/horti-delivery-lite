@@ -12,6 +12,8 @@ interface Props {
   storeId?: string;
   estimatedTotal?: number;
   hasUnitItems?: boolean;
+  /** Itens por unidade cujo valor vem de peso médio (estimativa) */
+  hasUnitWeightBasedEstimate?: boolean;
   itemsWithoutEstimate?: number;
   onSubmit: (data: { 
     customer_name: string; 
@@ -41,6 +43,7 @@ export function CheckoutForm({
   storeId, 
   estimatedTotal,
   hasUnitItems = false,
+  hasUnitWeightBasedEstimate = false,
   itemsWithoutEstimate = 0,
   onSubmit, 
   onBack 
@@ -190,7 +193,7 @@ export function CheckoutForm({
         </div>
         
         {/* Estimativa de itens por unidade */}
-        {estimatedTotal && estimatedTotal > basketPrice && (
+        {hasUnitWeightBasedEstimate && estimatedTotal && estimatedTotal > basketPrice && (
           <div className="flex justify-between text-sm font-semibold text-amber-600">
             <span className="flex items-center gap-1">
               <Scale className="h-3.5 w-3.5" />
@@ -213,9 +216,9 @@ export function CheckoutForm({
         <div className="flex items-center justify-between pt-2 border-t border-primary/20">
           <div>
             <span className="text-base font-bold text-foreground">
-              {hasUnitItems ? "Total estimado" : "Total do pedido"}
+              {hasUnitItems && hasUnitWeightBasedEstimate ? "Total estimado" : "Total do pedido"}
             </span>
-            {hasUnitItems && (
+            {hasUnitItems && hasUnitWeightBasedEstimate && (
               <p className="text-[10px] text-muted-foreground">
                 Valor final após pesagem
               </p>
@@ -227,7 +230,7 @@ export function CheckoutForm({
         </div>
         
         {/* Aviso de variação para itens por unidade */}
-        {hasUnitItems && (
+        {hasUnitItems && hasUnitWeightBasedEstimate && (
           <div className="mt-3">
             <CartEstimateWarning 
               hasUnitItems={true}

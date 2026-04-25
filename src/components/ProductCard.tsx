@@ -1,6 +1,6 @@
 import { Scale, Info } from "lucide-react";
 import type { BasketProduct } from "@/hooks/useActiveBasket";
-import { calculateUnitPriceEstimate, formatCurrency, formatPriceRange } from "@/utils/priceEstimation";
+import { calculateUnitPriceEstimate, formatCurrency, formatPriceRange, sellsByUnitFixedPrice } from "@/utils/priceEstimation";
 
 const EMOJI_MAP: Record<string, string> = {
   banana: "🍌", tomate: "🍅", alface: "🥬", batata: "🥔",
@@ -42,16 +42,21 @@ export function ProductCard({
 }: Props) {
   const emoji = getEmoji(product.name);
   const sellBy = (product.sell_by || 'unit') as 'unit' | 'weight' | 'both';
-  const isBoth = sellBy === 'both';
-  const currentMode: 'unit' | 'weight' = isBoth ? (selectedMode || 'unit') : (sellBy === 'weight' ? 'weight' : 'unit');
+  const fixedUnitFromCatalog = sellsByUnitFixedPrice(product);
+  const isBoth = sellBy === 'both' && !fixedUnitFromCatalog;
+  const currentMode: 'unit' | 'weight' = fixedUnitFromCatalog
+    ? 'unit'
+    : (isBoth ? (selectedMode || 'unit') : (sellBy === 'weight' ? 'weight' : 'unit'));
   const isWeight = currentMode === 'weight';
   const isAvailable = product.in_stock !== false;
   
   const pricePerKg = product.price_per_kg ?? product.price;
   const pricePerUnit = (product as any).price_per_unit ?? product.price;
   const inCart = isWeight ? (cartWeight ?? 0) > 0 : cartQty > 0;
-  
-  const unitEstimate = !isWeight ? calculateUnitPriceEstimate(product, cartQty || 1) : null;
+  const isFixedUnitPrice = fixedUnitFromCatalog;
+
+  const unitEstimate =
+    !isWeight && !isFixedUnitPrice ? calculateUnitPriceEstimate(product, cartQty || 1) : null;
 
   return (
     <div className={`flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card border transition-all ${inCart ? "border-primary/40 bg-emerald-50/30 dark:bg-emerald-950/20" : "border-border/60"} ${!isAvailable ? "opacity-60" : ""}`}>
@@ -75,14 +80,18 @@ export function ProductCard({
           )}
         </div>
         
-        {/* Preço por kg - SEMPRE visível */}
+        {/* Preço: fixo por unidade ou por kg */}
         <p className="text-sm mt-0.5">
-          <span className="text-primary font-bold">{formatCurrency(pricePerKg)}</span>
-          <span className="text-xs text-muted-foreground ml-1">/ kg</span>
+          <span className="text-primary font-bold">
+            {formatCurrency(isFixedUnitPrice && !isWeight ? pricePerUnit : pricePerKg)}
+          </span>
+          <span className="text-xs text-muted-foreground ml-1">
+            {isFixedUnitPrice && !isWeight ? "/ un" : "/ kg"}
+          </span>
         </p>
         
-        {/* Estimativa para produtos por unidade (quando não está no modo peso) */}
-        {!isWeight && unitEstimate && (
+        {/* Estimativa por peso médio (somente venda por kg com leitura em unidades, ex.: sell_by both) */}
+        {!isWeight && !isFixedUnitPrice && unitEstimate && (
           <div className="mt-0.5">
             {unitEstimate.hasEstimate ? (
               <p className="text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
@@ -139,10 +148,20 @@ export function ProductCard({
           </p>
         )}
         
-        {/* Informação do carrinho - modo unidade com estimativa */}
-        {!isWeight && inCart && cartQty > 0 && unitEstimate?.hasEstimate && (
+        {/* Informação do carrinho - modo unidade */}
+        {!isWeight && inCart && cartQty > 0 && (isFixedUnitPrice || unitEstimate?.hasEstimate) && (
           <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
-            {cartQty} un ≈ {formatCurrency(unitEstimate.estimated)}
+            {isFixedUnitPrice ? (
+              <>
+                {cartQty} un · {formatCurrency(cartQty * pricePerUnit)}
+              </>
+            ) : (
+              unitEstimate && (
+                <>
+                  {cartQty} un ≈ {formatCurrency(unitEstimate.estimated)}
+                </>
+              )
+            )}
           </p>
         )}
       </div>

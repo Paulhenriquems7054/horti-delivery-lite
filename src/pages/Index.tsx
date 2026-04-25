@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useParams, useNavigate } from "react-router-dom";
 import { useStoreInfo } from "@/hooks/useStoreInfo";
 import type { BasketProduct } from "@/hooks/useActiveBasket";
-import { calculateCartEstimate, calculateUnitPriceEstimate, formatCurrency } from "@/utils/priceEstimation";
+import { calculateCartEstimate, calculateUnitPriceEstimate, formatCurrency, sellsByUnitFixedPrice } from "@/utils/priceEstimation";
 
 type Step = "basket" | "checkout" | "confirmation";
 
@@ -77,6 +77,7 @@ export default function Index() {
         totalMin: 0,
         totalMax: 0,
         hasUnitEstimates: false,
+        hasUnitWeightBasedEstimate: false,
         unitItemsWithoutEstimate: 0,
       };
     }
@@ -397,14 +398,12 @@ export default function Index() {
                     
                     {/* Itens por unidade (com estimativa) */}
                     {itemsByUnit > 0 && (
-                      <p className="text-xs text-amber-600 font-semibold">
-                        ⚖️ {itemsByUnit} por unidade: {
-                          cartEstimates.hasUnitEstimates 
-                            ? `Estimativa ${formatCurrency(cartEstimates.unitItemsEstimate)}`
-                            : cartEstimates.unitItemsWithoutEstimate > 0
-                              ? "Valor após pesagem"
-                              : "A pesar"
-                        }
+                      <p className={`text-xs font-semibold ${cartEstimates.hasUnitWeightBasedEstimate ? "text-amber-600" : "text-emerald-600"}`}>
+                        {cartEstimates.hasUnitWeightBasedEstimate ? "⚖️ " : "✓ "}
+                        {itemsByUnit} por unidade:{" "}
+                        {cartEstimates.hasUnitWeightBasedEstimate
+                          ? `Estimativa ${formatCurrency(cartEstimates.unitItemsEstimate)}`
+                          : formatCurrency(cartEstimates.unitItemsEstimate)}
                       </p>
                     )}
                   </div>
@@ -413,7 +412,7 @@ export default function Index() {
               </div>
               
               {/* Aviso de variação de preço */}
-              {itemsByUnit > 0 && (
+              {itemsByUnit > 0 && cartEstimates.hasUnitWeightBasedEstimate && (
                 <div className="mt-4">
                   <CartEstimateWarning 
                     hasUnitItems={true} 
@@ -450,16 +449,20 @@ export default function Index() {
                       const mode = sellBy === 'both' ? (productMode[p.id] || 'unit') : sellBy;
                       return mode === 'unit' && (cart[p.id] || 0) > 0;
                     }).map(p => {
-                      const estimate = calculateUnitPriceEstimate(p, cart[p.id]);
+                      const isFixedUnit = sellsByUnitFixedPrice(p);
+                      const estimate = calculateUnitPriceEstimate(p, cart[p.id] || 0);
+                      const fixedLine = (cart[p.id] || 0) * (p.price_per_unit ?? p.price);
                       return (
                         <div key={p.id} className="flex justify-between text-xs">
                           <span className="text-foreground">
                             {p.name} ({cart[p.id]} un)
                           </span>
-                          <span className="font-bold text-amber-600">
-                            {estimate.hasEstimate 
-                              ? `≈ ${formatCurrency(estimate.estimated)}`
-                              : "A pesar"
+                          <span className={`font-bold ${isFixedUnit ? "text-emerald-600" : "text-amber-600"}`}>
+                            {isFixedUnit
+                              ? formatCurrency(fixedLine)
+                              : estimate.hasEstimate
+                                ? `≈ ${formatCurrency(estimate.estimated)}`
+                                : "A pesar"
                             }
                           </span>
                         </div>
@@ -537,6 +540,7 @@ export default function Index() {
               storeId={store.id}
               estimatedTotal={cartEstimates.totalEstimate}
               hasUnitItems={itemsByUnit > 0}
+              hasUnitWeightBasedEstimate={cartEstimates.hasUnitWeightBasedEstimate}
               itemsWithoutEstimate={cartEstimates.unitItemsWithoutEstimate}
               onBack={() => setStep("basket")}
               onSubmit={(data) => {

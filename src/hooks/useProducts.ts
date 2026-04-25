@@ -67,12 +67,20 @@ export function useCreateProduct() {
 
       const defaultAverageWeight = 0.3;
       const defaultWeightVariance = 0.15;
+      const derivedSellBy =
+        payload.sell_by ?? (payload.unit === "kg" ? "weight" : "unit");
       const normalizedInput = {
         ...payload,
-        sell_by: payload.sell_by ?? "both",
-        average_weight: payload.average_weight ?? defaultAverageWeight,
+        sell_by: derivedSellBy,
+        average_weight:
+          derivedSellBy === "unit"
+            ? (payload.average_weight ?? null)
+            : (payload.average_weight ?? defaultAverageWeight),
         weight_variance: payload.weight_variance ?? defaultWeightVariance,
-        price_per_kg: payload.price_per_kg ?? payload.price,
+        price_per_kg:
+          derivedSellBy === "unit"
+            ? (payload.price_per_kg ?? null)
+            : (payload.price_per_kg ?? payload.price),
       };
 
       const { data, error } = await supabase
